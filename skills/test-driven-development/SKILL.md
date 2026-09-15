@@ -15,18 +15,24 @@ Write the test first. Watch it fail. Write minimal code to pass.
 
 ## When to Use
 
-**Always:**
+**Always, when you can name the bug the test would catch:**
 - New features
 - Bug fixes
 - Refactoring
 - Behavior changes
 
-**Exceptions (ask your human partner):**
-- Throwaway prototypes
-- Generated code
-- Configuration files
+Branches, edge cases, error paths, money, auth, parsers and state
+transitions always have a nameable bug.
 
-Thinking "skip TDD just this once"? Stop. That's rationalization.
+**Skip, with a one-line note saying what you skipped and why (no need to ask):**
+- Plumbing: a getter returning what was set, a component rendering, a mock being called, framework behaviour
+- Configuration files and generated code
+- Throwaway prototypes
+
+The test is whether you can write the sentence "this test fails when
+`<production change>`". Can't write it? Plumbing. Can write it? TDD.
+
+Thinking "skip TDD just this once" on code with a nameable bug? Stop. That's rationalization.
 
 ## The Iron Law
 
@@ -213,7 +219,7 @@ When writing or changing any test, read [writing-good-tests.md](writing-good-tes
 
 | Excuse | Reality |
 |--------|---------|
-| "Too simple to test" | Simple code breaks. Test takes 30 seconds. |
+| "Too simple to test" | Simple is not the criterion. Can you name the bug? Then test it; it takes 30 seconds. Can't? Note the skip and move on. |
 | "I'll test after" | Tests written after pass immediately — which proves nothing. They may test the wrong thing, test the implementation instead of the behavior, or miss the edge case you forgot. You never watched it fail, so you never proved it can catch the bug. Test-first forces that failure. |
 | "Tests after achieve same goals (spirit not ritual)" | Tests-after answer "what does this do?"; tests-first answer "what should this do?" Tests written after are biased by the code you already wrote — you verify the cases you remembered, not the ones you'd have discovered. Coverage without proof the tests work. |
 | "Already manually tested" | Manual testing is ad-hoc: no record of what you covered, no way to re-run it when the code changes, easy to forget cases under pressure. "Worked when I tried it" ≠ comprehensive. Automated tests run the same way every time. |
@@ -284,7 +290,7 @@ Extract validation for multiple fields if needed.
 
 Before marking work complete:
 
-- [ ] Every new function/method has a test
+- [ ] Every function with a nameable bug has a test; every skip is noted in one line
 - [ ] Watched each test fail before implementing
 - [ ] Each test failed for expected reason (feature missing, not typo)
 - [ ] Wrote minimal code to pass each test
@@ -313,8 +319,7 @@ Never fix bugs without a test.
 ## Final Rule
 
 ```
-Production code → test exists and failed first
+Production code with a nameable bug → test exists and failed first
+Plumbing → one-line skip note
 Otherwise → not TDD
 ```
-
-No exceptions without your human partner's permission.

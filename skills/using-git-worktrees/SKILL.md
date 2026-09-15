@@ -127,7 +127,11 @@ Run tests to ensure workspace starts clean:
 npm test / cargo test / pytest / go test ./...
 ```
 
-**If tests fail:** Report failures, ask whether to proceed or investigate.
+**If tests fail:** list the failing tests in the report as pre-existing
+and proceed. They are the baseline: a later run that fails on exactly
+these is not a regression, one that fails on anything else is. Stop and
+ask only if a failing test covers the code this work will change — you
+could not tell your own breakage from the inherited kind.
 
 **If tests pass:** Report ready.
 
@@ -136,6 +140,14 @@ npm test / cargo test / pytest / go test ./...
 ```
 Worktree ready at <full-path>
 Tests passing (<N> tests, 0 failures)
+Ready to implement <feature-name>
+```
+
+or
+
+```
+Worktree ready at <full-path>
+Tests: <N> passing, <M> failing before any change (pre-existing): <test names>
 Ready to implement <feature-name>
 ```
 
@@ -153,7 +165,7 @@ Ready to implement <feature-name>
 | Neither exists | Check instruction file, then default `.worktrees/` |
 | Directory not ignored | Add to .gitignore + commit |
 | Permission error on create | Sandbox fallback, work in place |
-| Tests fail during baseline | Report failures + ask |
+| Tests fail during baseline | Record as pre-existing, proceed; ask only if they cover the code being changed |
 | No package.json/Cargo.toml | Skip dependency install |
 
 ## Common Rationalizations
@@ -164,4 +176,4 @@ Ready to implement <feature-name>
 | "`git worktree add` is quicker than hunting for a native tool" | A native tool (e.g. `EnterWorktree`) owns placement, branching, and cleanup. Bypassing it is the #1 mistake — it creates phantom state your harness can't see or manage. |
 | "The worktree directory is surely ignored already" | Run `git check-ignore`. An unignored worktree directory commits the whole tree into the repo. |
 | "Any directory name works" | Explicit instructions beat an existing project-local directory, which beats the `.worktrees/` default. |
-| "The workspace is fresh — baseline tests can wait" | A dirty baseline makes every later failure ambiguous. Run the tests now; proceeding past failures is your human partner's call. |
+| "The workspace is fresh — baseline tests can wait" | A dirty baseline makes every later failure ambiguous. Run the tests now and record what fails before you touch anything. |

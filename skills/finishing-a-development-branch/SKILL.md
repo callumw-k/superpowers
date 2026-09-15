@@ -39,27 +39,29 @@ This determines which menu to show and how cleanup works:
 
 | State | Menu | Cleanup |
 |-------|------|---------|
-| `GIT_DIR == GIT_COMMON` (normal repo) | Standard 3 options | No worktree to clean up |
-| `GIT_DIR != GIT_COMMON`, named branch | Standard 3 options | Provenance-based (see Step 6) |
+| `GIT_DIR == GIT_COMMON` (normal repo) | Standard 4 options | No worktree to clean up |
+| `GIT_DIR != GIT_COMMON`, named branch | Standard 4 options | Provenance-based (see Step 6) |
 | `GIT_DIR != GIT_COMMON`, detached HEAD | Reduced 2 options (no merge) | Externally managed — leave in place |
 
 ## Step 3: Determine Base Branch
 
 The base branch is whatever this work forked from — usually named in the
-plan, the conversation, or the branch's upstream. If it is not already
-known, ask: "This branch split from <your best guess> - is that correct?"
-Confirm before merging: merging into the wrong base is expensive to undo.
+plan, the conversation, or the branch's upstream. Work out your best guess
+now; the menu in Step 4 names it, so your human partner confirms or
+corrects it in the same reply as their choice. Never merge into a base
+they have not seen named: merging into the wrong base is expensive to undo.
 
 ## Step 4: Present Options
 
-**Normal repo and named-branch worktree — present exactly these 3 options:**
+**Normal repo and named-branch worktree — present exactly these 4 options:**
 
 ```
-Implementation complete. What would you like to do?
+Implementation complete on <feature-branch>, forked from <base-branch> (correct me if not). What would you like to do?
 
 1. Merge back to <base-branch> locally
-2. Push and create a Pull Request
-3. Keep the branch as-is (I'll handle it later)
+2. Squash-merge back to <base-branch> locally (one commit)
+3. Push and create a Pull Request
+4. Keep the branch as-is (I'll handle it later)
 
 Which option?
 ```
@@ -67,7 +69,7 @@ Which option?
 **Detached HEAD — present exactly these 2 options:**
 
 ```
-Implementation complete. You're on a detached HEAD (externally managed workspace).
+Implementation complete. You're on a detached HEAD (externally managed workspace), forked from <base-branch> (correct me if not).
 
 1. Push as new branch and create a Pull Request
 2. Keep as-is (I'll handle it later)
@@ -110,7 +112,23 @@ delete the branch:
 git branch -d <feature-branch>
 ```
 
-### Option 2: Push and Create PR
+### Option 2: Squash-Merge Locally
+
+Same as Option 1, with the merge replaced by:
+
+```bash
+git merge --squash <feature-branch>
+git commit
+```
+
+Write the squash commit's subject as one line describing the whole change
+(the branch's commit subjects are the material). Verify tests on the merged
+result exactly as in Option 1. `git branch -d` refuses to delete a
+squash-merged branch because its commits are not ancestors of the base;
+once the merged result is green and the squash commit exists, use
+`git branch -D <feature-branch>` for this option only.
+
+### Option 3: Push and Create PR
 
 ```bash
 git push -u origin <feature-branch>
@@ -125,7 +143,7 @@ present, and report the URL to your human partner.
 
 Keep the worktree — your human partner iterates on PR feedback there.
 
-### Option 3: Keep As-Is
+### Option 4: Keep As-Is
 
 Report: "Keeping branch <name>. Worktree preserved at <path>."
 
@@ -158,7 +176,7 @@ git branch -D <feature-branch>
 
 ## Step 6: Cleanup Workspace
 
-**Runs for Option 1 and confirmed discards.** Options 2 and 3 always
+**Runs for Options 1 and 2 and confirmed discards.** Options 3 and 4 always
 preserve the worktree. Both callers have already changed directory to the
 main repo root — worktree removal must run from outside the worktree —
 and use the `GIT_DIR`/`GIT_COMMON`/`WORKTREE_PATH` values captured in
@@ -205,8 +223,9 @@ place. If your platform provides a workspace-exit tool, use it.
 | Option | Merge | Push | Keep Worktree | Cleanup Branch |
 |--------|-------|------|---------------|----------------|
 | 1. Merge locally | yes | - | - | yes |
-| 2. Create PR | - | yes | yes | - |
-| 3. Keep as-is | - | - | yes | - |
+| 2. Squash-merge locally | yes (squash) | - | - | yes (force) |
+| 3. Create PR | - | yes | yes | - |
+| 4. Keep as-is | - | - | yes | - |
 | Discard (explicit request only) | - | - | - | yes (force) |
 
 ## Common Rationalizations
@@ -221,5 +240,5 @@ place. If your platform provides a workspace-exit tool, use it.
 | "This other worktree looks stale — I'll clean it too" | Clean up only worktrees under `.worktrees/` or `worktrees/`. Everything else belongs to the host. |
 | "Removal refused — `--force` is just finishing the cleanup" | The refusal means files exist only in that worktree. `--force` destroys them permanently. Show your human partner and ask. |
 | "The merged-result failure is probably flaky" | A failing merged result stops everything. Branch and worktree stay put while you investigate. |
-| "The base branch is obviously main" | Confirm the fork point or ask. Merging into the wrong base is expensive to undo. |
+| "The base branch is obviously main" | Name the fork point in the menu so your human partner can correct it. Merging into the wrong base is expensive to undo. |
 | "The push was rejected — force-push will fix it" | A rejected push means the remote moved. Investigate; force-push only on your human partner's explicit request. |
