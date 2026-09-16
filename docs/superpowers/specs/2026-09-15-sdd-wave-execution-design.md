@@ -25,10 +25,13 @@ A ten-task plan whose tasks mostly don't depend on each other currently runs as 
 
 ## Opt-in
 
-Waves run when either holds:
+Waves run when any of these holds:
 
 - Your human partner asks for it when handing over the plan ("execute this in waves", "run independent tasks in parallel").
-- The plan header carries `**Execution:** waves`. writing-plans adds this line only when your human partner asked for it during planning; the default plan header has no Execution line.
+- The plan header carries `**Execution:** waves`. writing-plans adds this line when your human partner asked for it during planning or chose it at the handoff menu; the default plan header has no Execution line.
+- Their standing instructions (CLAUDE.md or equivalent) say to run plans in waves.
+
+writing-plans offers the choice at the plan handoff when the graph allows it: it computes the waves from `Depends on` and Files the way "Scheduling a wave" does, and if the wave count is below the task count it replaces the "say go" line with a two-option menu (serial, or waves with the wave sizes shown). A chain graph gets no menu.
 
 Absent both, SDD runs serially exactly as today. Wave mode is recorded as the second line of the ledger: `Execution: waves (cap 4)`. On resume, that line, not the conversation, says which mode the run is in.
 

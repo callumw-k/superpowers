@@ -70,8 +70,8 @@ independently testable deliverable.
 argues from the spec, so the spec travels with it; executors read both]
 
 **Execution:** [waves — ONLY when your human partner asked for concurrent
-execution during planning; otherwise omit this line entirely, SDD runs
-tasks serially by default]
+execution during planning or chose it at the handoff menu; otherwise omit
+this line entirely, SDD runs tasks serially by default]
 
 ## Global Constraints
 
@@ -168,6 +168,26 @@ After saving the plan, pick the execution skill yourself and state it in the sam
 - **REQUIRED SUB-SKILL:** Use superpowers:subagent-driven-development
 - Fresh subagent per task + two-stage review
 - Say: "Plan saved to `docs/superpowers/plans/<filename>.md`. I'll execute it with subagent-driven-development. Review the plan and say go."
+
+**Offer waves when the graph allows them.** Before the handoff message,
+compute the waves from the tasks' `Depends on` and Files the way
+subagent-driven-development's `waves.md` ("Scheduling a wave") does: a task
+is ready when its dependencies are done, tasks in one wave share no files,
+at most four per wave. If the wave count equals the task count, the graph is
+a chain and the default message above stands. Otherwise replace it with a
+menu:
+
+```
+Plan saved to `<path>`. Review it, then pick how subagent-driven-development runs it:
+
+1. Serial: <N> tasks, one at a time
+2. Waves: <W> waves (<sizes>), one worktree per task, full suite after each wave
+
+Which option?
+```
+
+Option 2: add `**Execution:** waves` to the plan header, commit, then invoke
+subagent-driven-development. Option 1: invoke it as-is.
 
 **Inline instead, only when one of these observable conditions holds:**
 - The harness has no subagent tool

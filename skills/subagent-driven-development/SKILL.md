@@ -161,8 +161,9 @@ rulings made without one are provisional.
 
 Decide the execution mode now and write it as the ledger's second line.
 Wave mode (`Execution: waves (cap 4)`) is on only when your human partner
-asked for concurrent execution when handing you the plan, or the plan
-header carries `**Execution:** waves`. Otherwise the run is serial and the
+asked for concurrent execution when handing you the plan, the plan header
+carries `**Execution:** waves`, or their standing instructions (CLAUDE.md or
+equivalent) say to run plans in waves. Otherwise the run is serial and the
 ledger has no `Execution:` line. On resume, that line decides the mode, not
 your memory. Wave mode is described in [waves.md](waves.md); read it before
 the pre-flight scan, because the scan's graph checks feed it.
