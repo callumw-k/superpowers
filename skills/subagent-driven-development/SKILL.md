@@ -159,12 +159,24 @@ authority the plan argues from, and conflicts inside the plan resolve
 against it. A plan with no reachable spec gets a ledger note saying so —
 rulings made without one are provisional.
 
+Decide the execution mode now and write it as the ledger's second line.
+Wave mode (`Execution: waves (cap 4)`) is on only when your human partner
+asked for concurrent execution when handing you the plan, or the plan
+header carries `**Execution:** waves`. Otherwise the run is serial and the
+ledger has no `Execution:` line. On resume, that line decides the mode, not
+your memory. Wave mode is described in [waves.md](waves.md); read it before
+the pre-flight scan, because the scan's graph checks feed it.
+
 Before dispatching Task 1, scan the plan once for conflicts, writing down
 what you checked as you check it:
 
 - tasks that contradict each other or the plan's Global Constraints
 - anything the plan explicitly mandates that the review rubric treats as a
   defect (a test that asserts nothing, verbatim duplication of a logic block)
+- `Depends on` lines that disagree with Files and Interfaces: a Consumes
+  whose producer isn't listed, a shared file with no edge between the two
+  tasks, or a cycle (waves.md, "Pre-flight: the graph"). Rule on the first
+  two by adding the edge; a cycle stops you.
 
 The scan's output is a table, not a verdict. One row for every pair of tasks
 that share a file or an interface: the two tasks, what one produces against
@@ -246,7 +258,10 @@ child is noticed within minutes, not at the end of the session.
 ### 1. Dispatch the implementer
 
 Record BASE (`git rev-parse HEAD`) before dispatching — the review package
-and fix-round diffs need it.
+and fix-round diffs need it. In wave mode BASE is the wave base, every
+`HEAD` in this loop's review-package commands is the task branch
+`sdd/<plan>/task-N`, and the dispatch's `Work from:` names the task's
+worktree (waves.md, "Running a wave").
 
 - **Task brief:** before dispatching an implementer, run this skill's
   `scripts/task-brief PLAN_FILE N` — it extracts the task's full text to a
@@ -279,7 +294,9 @@ and fix-round diffs need it.
   a pointer to that ledger entry in the dispatch.
 - Record the implementer's agent identity from the dispatch result —
   fix-loop rounds 1-3 resume this agent.
-- Never dispatch multiple implementation subagents in parallel (conflicts).
+- Dispatch implementers serially unless the run is in wave mode. A wave is
+  the only sanctioned concurrent dispatch, and it is safe only because each
+  task has its own worktree and the tasks share no files (waves.md).
 
 Template: [implementer-prompt.md](implementer-prompt.md)
 
@@ -442,6 +459,16 @@ Then mark the todo complete and move on. Never move to the next task while
 the review has open Critical/Important issues that are neither fixed nor
 parked-with-ruling at the cap.
 
+## Waves
+
+In wave mode the task loop runs for several tasks at once, one worktree per
+task, and the wave ends with a barrier: merge every task branch into the plan
+branch, run the full suite once, clean up the worktrees, start the next wave
+from the merged head. Up to four tasks per wave; tasks in a wave share no
+files and branch from the same commit, so their merges cannot conflict. The
+per-task loop above is unchanged inside a wave. The process, the `Wave <W>:`
+ledger lines and the resume rules are in [waves.md](waves.md).
+
 ## Final Review
 
 The final whole-branch review gets a package too: run
@@ -458,13 +485,13 @@ fixed before merge.
 If the final whole-branch review returns findings, dispatch ONE fix subagent
 with the complete findings list — not one fixer per finding.
 Per-finding fixers each rebuild context and re-run suites; a real
-session's final-review fix wave cost more than all its tasks combined.
-Then run exactly one scoped re-review of the fix wave
+session's final-review fix dispatch cost more than all its tasks combined.
+Then run exactly one scoped re-review of the fix dispatch
 (`scripts/review-package PLAN_FILE FIX_BASE HEAD` over the fix range,
 [re-review-prompt.md](re-review-prompt.md)).
 Adjudicate any residual findings as in the task loop's breaker: park with
 rulings, or rule on the load-bearing ones and ledger what you decided. Only
-the four classes above stop you here. There is no second fix wave —
+the four classes above stop you here. There is no second fix dispatch —
 residual load-bearing findings surface to your human partner when
 finishing-a-development-branch presents the options.
 
@@ -482,7 +509,8 @@ made in secret.
 When the final whole-branch review is clean and its fixes are merged,
 delete this plan's workspace (`rm -rf <workspace>`) — the git history is
 the record now. Sibling directories belong to other plans; leave them
-alone.
+alone. In wave mode, first remove any `<main-root>/.worktrees/<plan>/`
+directory and `sdd/<plan>/*` branch still present (waves.md, "Finish").
 
 Use superpowers:finishing-a-development-branch.
 

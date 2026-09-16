@@ -69,6 +69,10 @@ independently testable deliverable.
 **Spec:** [path to the spec/design doc this plan implements — the plan
 argues from the spec, so the spec travels with it; executors read both]
 
+**Execution:** [waves — ONLY when your human partner asked for concurrent
+execution during planning; otherwise omit this line entirely, SDD runs
+tasks serially by default]
+
 ## Global Constraints
 
 [The spec's project-wide requirements — version floors, dependency limits,
@@ -94,6 +98,11 @@ include this section.]
 - Produces: [what later tasks rely on — exact function names, parameter
   and return types. A task's implementer sees only their own task; this
   block is how they learn the names and types neighboring tasks use.]
+
+**Depends on:** [Task 2, Task 4 — or `none`. Every task whose Produces
+this task Consumes, and every earlier task that creates or modifies a
+file this task modifies. Nothing else. A dependency that isn't one costs
+parallelism; a missing one costs a broken build, so when unsure, list it.]
 
 - [ ] **Step 1: Write the failing test**
 
@@ -137,6 +146,7 @@ Every step must contain the actual content an engineer needs. These are **plan f
 - "Similar to Task N" (repeat the code — the engineer may be reading tasks out of order)
 - Steps that describe what to do without showing how (code blocks required for code steps)
 - References to types, functions, or methods not defined in any task
+- A task without a `**Depends on:**` line, or one that names a task whose Produces it does not Consume and whose files it does not touch
 
 ## Self-Review
 

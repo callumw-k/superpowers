@@ -1,0 +1,80 @@
+#!/usr/bin/env bash
+# Create or reuse the worktree and branch for one plan task in SDD wave mode,
+# and print the worktree's absolute path.
+#
+# Worktree: <main-worktree-root>/.worktrees/<plan-basename>/task-<N>
+# Branch:   sdd/<plan-basename>/task-<N>
+#
+# Task worktrees hang off the MAIN worktree root, not the caller's, so a plan
+# running in .worktrees/feature/ gets siblings under .worktrees/ rather than a
+# nested .worktrees/ inside its own tree. BASE resolves in the caller's
+# worktree, so "HEAD" means the plan branch's head.
+#
+# Single source of truth for naming, so resume can find what an earlier run
+# created and the merge step knows which branch to merge.
+#
+# Usage: task-worktree PLAN_FILE TASK_NUMBER [BASE]
+# Exit: 0 created or reused; 2 usage, missing plan, bad BASE;
+#       3 .worktrees not git-ignored; 4 branch or directory in an
+#       inconsistent state (wrong branch at the path, unregistered directory,
+#       branch checked out elsewhere).
+set -euo pipefail
+
+if [ $# -lt 2 ] || [ $# -gt 3 ]; then
+  echo "usage: task-worktree PLAN_FILE TASK_NUMBER [BASE]" >&2
+  exit 2
+fi
+
+plan=$1
+n=$2
+base=${3:-HEAD}
+[ -f "$plan" ] || { echo "no such plan file: $plan" >&2; exit 2; }
+case "$n" in
+  ''|*[!0-9]*) echo "TASK_NUMBER must be an integer: $n" >&2; exit 2 ;;
+esac
+
+slug=$(basename "$plan" .md)
+case "$slug" in
+  ''|.|..) echo "cannot derive a name from: $plan" >&2; exit 2 ;;
+esac
+
+base_sha=$(git rev-parse --verify --quiet "${base}^{commit}") \
+  || { echo "bad BASE: $base" >&2; exit 2; }
+
+main_root=$(git worktree list --porcelain | awk 'NR==1 { sub(/^worktree /, ""); print }')
+dir="$main_root/.worktrees/$slug/task-$n"
+branch="sdd/$slug/task-$n"
+git -C "$main_root" check-ref-format --branch "$branch" >/dev/null 2>&1 \
+  || { echo "plan basename is not usable in a branch name: $slug" >&2; exit 2; }
+ref="refs/heads/$branch"
+
+git -C "$main_root" check-ignore -q .worktrees/ \
+  || { echo ".worktrees is not git-ignored in $main_root; add it to .gitignore first" >&2; exit 3; }
+
+git -C "$main_root" worktree prune
+
+porcelain=$(git -C "$main_root" worktree list --porcelain)
+dir_branch=$(printf '%s\n' "$porcelain" \
+  | awk -v d="$dir" '$1 == "worktree" { sub(/^worktree /, ""); cur = $0 } $1 == "branch" && cur == d { print $2 }')
+branch_path=$(printf '%s\n' "$porcelain" \
+  | awk -v b="$ref" '$1 == "worktree" { sub(/^worktree /, ""); cur = $0 } $1 == "branch" && $2 == b { print cur }')
+
+if [ -n "$dir_branch" ]; then
+  [ "$dir_branch" = "$ref" ] \
+    || { echo "$dir is a worktree on ${dir_branch#refs/heads/}, expected $branch" >&2; exit 4; }
+  printf '%s\n' "$dir"
+  exit 0
+fi
+
+[ ! -e "$dir" ] || { echo "$dir exists but is not a registered worktree" >&2; exit 4; }
+
+if git -C "$main_root" rev-parse --verify --quiet "$ref" >/dev/null; then
+  [ -z "$branch_path" ] || { echo "$branch is already checked out at $branch_path" >&2; exit 4; }
+  mkdir -p "$(dirname "$dir")"
+  git -C "$main_root" worktree add -q "$dir" "$branch"
+else
+  mkdir -p "$(dirname "$dir")"
+  git -C "$main_root" worktree add -q "$dir" -b "$branch" "$base_sha"
+fi
+
+printf '%s\n' "$dir"
