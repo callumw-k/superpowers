@@ -79,10 +79,19 @@ on the right branch and re-adds one whose directory was removed, so it is
 safe to run on resume. Exit 3 means `.worktrees` is not git-ignored: fix that
 the way using-git-worktrees says, then rerun. Exit 4 means the branch or
 directory is in a state this run did not create: inspect before continuing.
-Worktree creation denied by the sandbox means this wave, and the rest of the
-run, goes serial; ledger it. If your harness cannot run subagents
-concurrently, the run is serial from the start; ledger it and skip this
-file.
+
+**Probe.** Before the first multi-task wave, dispatch one subagent (cheapest
+model) to run `git status` in the first task worktree and report the output.
+A session inside a native worktree pins its subagents (SKILL.md, Setup):
+creating task worktrees still succeeds, git in them is refused, and without
+the probe an implementer discovers that after it has written code. Moving
+the task worktrees under the native tool's directory does not lift the pin,
+and neither does the subagent entering its worktree by path. Worktree creation
+denied by the sandbox, or a probe refused, means this wave and the rest of
+the run go serial: append `Execution: serial (<reason>)` to the ledger and
+run the ready tasks in the plan worktree. If your harness cannot run
+subagents concurrently, the run is serial from the start; ledger it and skip
+this file.
 
 Run the project's setup in each worktree as using-git-worktrees Step 2
 describes (install dependencies, generate what needs generating). Skip that
@@ -103,8 +112,10 @@ built from implementer-prompt.md exactly as in serial mode, with two changes:
 
   > Your working directory is `<worktree path>`, a git worktree on branch
   > `sdd/<plan>/task-N`. Run every command there. Commit on that branch.
-  > Do not touch `<plan worktree path>` or any other worktree. Write your
-  > report to `<plan workspace>/task-N-report.md` (absolute path).
+  > Do not touch `<plan worktree path>` or any other worktree. If git
+  > refuses to run in your working directory, stop: write a report saying
+  > what was refused, reply BLOCKED, and do no work anywhere else. Write
+  > your report to `<plan workspace>/task-N-report.md` (absolute path).
 
 Briefs, reports and review packages stay in the plan workspace under the plan
 worktree. Nothing is created in a task worktree except the task's own code.
@@ -192,12 +203,14 @@ Graph: Task 3 <- 1, 2
 Wave 2: start (base a1b2c3d, tasks 3, 4, 6)
 Wave 2: undeclared file src/x.ts touched by Task 4
 Wave 2: merged (tasks 3, 4, 6 -> e4f5a6b, suite pass)
+Execution: serial (probe refused in .worktrees/plan/task-3)
 ```
 
 Resume rules, on top of SKILL.md's:
 
-- `Execution: waves` on line 2 means wave mode. No such line means serial,
-  whatever the conversation remembers.
+- The last `Execution:` line decides the mode. `Execution: waves` on line 2
+  with no later `Execution: serial` line means wave mode. No `Execution:`
+  line at all means serial, whatever the conversation remembers.
 - A `Wave <W>: start` with no matching `merged` line is a wave in flight.
   For a wave listing two or more tasks, run `task-worktree` for each first;
   it reuses what exists and re-adds what a crash or `git clean` removed. A
@@ -224,6 +237,7 @@ branch started from, and the package covers every wave.
 | Excuse | Reality |
 |--------|---------|
 | "These two tasks only share a test helper, run them together" | Shared file means same wave is forbidden. The later one waits, or the plan gets an edge. |
+| "The probe is a whole subagent just to run git status" | It costs seconds. Finding out from an implementer's report costs a salvage of whatever it wrote first. |
 | "Five ready tasks, the cap is arbitrary" | The cap is where report handling stops being reliable. Spill to the next wave. |
 | "The merges were clean, skip the suite" | Disjoint files still interact at runtime. One suite run per wave is the whole safety net. |
 | "The worktree is dirty, I'll just `--force` the remove" | Dirt after a `complete` line is either a broken contract or lost work. Look first. |

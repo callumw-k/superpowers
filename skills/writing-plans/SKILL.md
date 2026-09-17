@@ -174,8 +174,12 @@ compute the waves from the tasks' `Depends on` and Files the way
 subagent-driven-development's `waves.md` ("Scheduling a wave") does: a task
 is ready when its dependencies are done, tasks in one wave share no files,
 at most four per wave. If the wave count equals the task count, the graph is
-a chain and the default message above stands. Otherwise replace it with a
-menu:
+a chain and the default message above stands. Also run
+subagent-driven-development's pin check (its SKILL.md, Setup): a session
+pinned to a native worktree cannot run waves until it leaves it, so when
+the check refuses, option 2 ends with `(this session is pinned to a native
+worktree; I'd exit it with keep first)`. Otherwise replace the message with
+a menu:
 
 ```
 Plan saved to `<path>`. Review it, then pick how subagent-driven-development runs it:

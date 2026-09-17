@@ -128,6 +128,22 @@ superpowers:using-git-worktrees to create one or verify the existing one.
 Never start implementation on a main/master branch without your human
 partner's explicit consent.
 
+In wave mode, skip that skill's native worktree tool and create the plan
+worktree with its git fallback (Step 1b), staying in the launch directory
+and dispatching with `Work from:` set to the plan worktree. A session
+inside a native worktree (Claude Code's EnterWorktree) pins every subagent
+it dispatches: git in any other worktree is refused, and a subagent that
+enters its task worktree by path is refused there too.
+
+**Pin check**, before anything is created in wave mode: run
+`git worktree list` to read the main root, then run
+`git -C <main root> rev-parse --short HEAD` as a literal command, not
+inside a script. The harness refusing it means the session is pinned.
+Then ask, before any dispatch: leave the native worktree (ExitWorktree
+with `keep`, the worktree stays and serves as the plan worktree) and run
+waves, or run serial. Serial gets the ledger line
+`Execution: serial (session pinned to a native worktree)`.
+
 Conversation memory does not survive compaction. In real sessions,
 controllers that lost their place have re-dispatched entire completed task
 sequences — the single most expensive failure observed. Track progress in
@@ -164,8 +180,9 @@ Wave mode (`Execution: waves (cap 4)`) is on only when your human partner
 asked for concurrent execution when handing you the plan, the plan header
 carries `**Execution:** waves`, or their standing instructions (CLAUDE.md or
 equivalent) say to run plans in waves. Otherwise the run is serial and the
-ledger has no `Execution:` line. On resume, that line decides the mode, not
-your memory. Wave mode is described in [waves.md](waves.md); read it before
+ledger has no `Execution:` line. A wave run can drop to serial part way
+(waves.md, "Probe"); on resume, the last `Execution:` line decides the mode,
+not your memory. Wave mode is described in [waves.md](waves.md); read it before
 the pre-flight scan, because the scan's graph checks feed it.
 
 Before dispatching Task 1, scan the plan once for conflicts, writing down

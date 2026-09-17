@@ -33,9 +33,9 @@ Waves run when any of these holds:
 
 writing-plans offers the choice at the plan handoff when the graph allows it: it computes the waves from `Depends on` and Files the way "Scheduling a wave" does, and if the wave count is below the task count it replaces the "say go" line with a two-option menu (serial, or waves with the wave sizes shown). A chain graph gets no menu.
 
-Absent both, SDD runs serially exactly as today. Wave mode is recorded as the second line of the ledger: `Execution: waves (cap 4)`. On resume, that line, not the conversation, says which mode the run is in.
+Absent both, SDD runs serially exactly as today. Wave mode is recorded as the second line of the ledger: `Execution: waves (cap 4)`. A later `Execution: serial (<reason>)` line records a fallback. On resume, the last `Execution:` line, not the conversation, says which mode the run is in.
 
-Wave mode also falls back to serial, with a ledger note, when the harness can't run subagents concurrently, when worktree creation is denied (the sandbox case using-git-worktrees already covers), or when the graph never yields two ready tasks with disjoint files.
+Wave mode also falls back to serial, with a ledger note, when the harness can't run subagents concurrently, when worktree creation is denied (the sandbox case using-git-worktrees already covers), when the session is already inside a native worktree (Claude Code's EnterWorktree pins every subagent to it, so wave mode creates the plan worktree with plain `git worktree add` and stays in the launch directory), when a pre-wave probe shows subagents still cannot run git in a task worktree, or when the graph never yields two ready tasks with disjoint files.
 
 ## Plan format: `Depends on`
 
