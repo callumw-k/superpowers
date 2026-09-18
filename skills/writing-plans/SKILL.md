@@ -169,6 +169,16 @@ After saving the plan, pick the execution skill yourself and state it in the sam
 - Fresh subagent per task + two-stage review
 - Say: "Plan saved to `docs/superpowers/plans/<filename>.md`. I'll execute it with subagent-driven-development. Review the plan and say go."
 
+**Offer a Herdr tab when running inside Herdr.** Check
+`test "${HERDR_ENV:-}" = 1` before the handoff message. When it passes,
+the default message and the waves menu also offer to run
+subagent-driven-development in a new Herdr tab (Sonnet): the default
+message ends `say go, or go herdr to run it in a new Herdr tab (Sonnet)`,
+and the waves menu carries the line shown there. If your human partner
+picks it, follow `herdr-handoff.md` in this skill's directory as the
+executor. The inline path is unaffected. When the check fails, say nothing
+about Herdr.
+
 **Offer waves when the graph allows them.** Before the handoff message,
 compute the waves from the tasks' `Depends on` and Files the way
 subagent-driven-development's `waves.md` ("Scheduling a wave") does: a task
@@ -187,11 +197,19 @@ Plan saved to `<path>`. Review it, then pick how subagent-driven-development run
 1. Serial: <N> tasks, one at a time
 2. Waves: <W> waves (<sizes>), one worktree per task, full suite after each wave
 
+Append herdr to run it in a new Herdr tab (Sonnet), e.g. "2 herdr".
+
 Which option?
 ```
 
+Drop the `Append herdr` line when the Herdr check above failed.
+
 Option 2: add `**Execution:** waves` to the plan header, commit, then invoke
-subagent-driven-development. Option 1: invoke it as-is.
+subagent-driven-development. Option 1: invoke it as-is. With `herdr`
+appended, do the same header edit and commit for option 2, then hand off
+via `herdr-handoff.md` instead of invoking the skill here. A Herdr child is
+never pinned to a native worktree, so `2 herdr` is available even when the
+pin check refused option 2.
 
 **Inline instead, only when one of these observable conditions holds:**
 - The harness has no subagent tool

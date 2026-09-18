@@ -217,11 +217,14 @@ This is the design approval. After the spec review loop passes, ask the user to 
 
 > "Spec written and committed to `<path>`. This is the full design; please review it and let me know if you want to make any changes before we start writing out the implementation plan."
 
+When `test "${HERDR_ENV:-}" = 1` passes, append to that message: "Say go to write the plan here, or go herdr to hand it to a new Herdr tab (Opus)." When the check fails, say nothing about Herdr.
+
 Wait for the user's response. If they request changes, make them and re-run the spec review loop. Only proceed once the user approves.
 
 **Implementation:**
 
 - Invoke the writing-plans skill to create a detailed implementation plan
+- If the user chose `go herdr`, follow `skills/writing-plans/herdr-handoff.md` as the planner instead: the child session invokes writing-plans on the spec, and you wait for it.
 - Do NOT invoke any other skill. writing-plans is the next step.
 
 ## Visual Companion
