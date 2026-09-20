@@ -20,8 +20,9 @@ output is the authority on syntax.
 
 ## The marker
 
-Read `.superpowers/ticket.json` from the repo root. If it is missing, say
-so and stop: this skill only runs where the daemon put a ticket. Keep
+Read `.superpowers/ticket.json` from the repo root. If it is missing, or
+its `unattended` field is not `true`, say so and stop: this skill only
+runs where the daemon put a ticket. Keep
 `ticket.key`, `ticket.url`, `git.branch`, `git.base`, `git.forge`,
 `linear.states.stuck` and `linear.states.finished` in mind for the rest of
 the run.
