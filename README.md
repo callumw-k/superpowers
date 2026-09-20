@@ -276,6 +276,8 @@ turn loses the bootstrap — start a fresh session if skills stop triggering.
 
 Unattended: when `.superpowers/ticket.json` is present in a worktree, brainstorming, writing-plans, subagent-driven-development and finishing-a-development-branch replace their human gates with recorded rulings, and **autonomous-ticket** runs the chain stage by stage. See that skill for the blocker rule.
 
+Herdr: brainstorming and writing-plans offer to hand the next stage to a new Herdr tab, and autonomous-ticket runs its stages in Herdr tabs. All of it checks `HERDR_ENV=1`, which Herdr sets in the panes it manages. Outside Herdr the offers never appear and autonomous-ticket stops at its gate, so nothing else in the plugin changes.
+
 **The agent checks for relevant skills before any task.** Mandatory workflows, not suggestions.
 
 ## Community

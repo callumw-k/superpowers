@@ -18,6 +18,12 @@ ticket <key>."
 Invoke the `herdr` skill before the first `herdr` command; the CLI's usage
 output is the authority on syntax.
 
+## The gate
+
+Check `test "${HERDR_ENV:-}" = 1` first. If it fails, say that you are not
+running inside Herdr and stop: every stage below spawns a Herdr tab, so
+there is nothing this skill can do from outside one.
+
 ## The marker
 
 Read `.superpowers/ticket.json` from the repo root. If it is missing, or
