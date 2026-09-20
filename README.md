@@ -2,8 +2,34 @@
 
 Superpowers is a complete software development methodology for your coding agents, built on top of a set of composable skills and some initial instructions that make sure your agent uses them.
 
+## This fork
+
+This is [callumw-k/superpowers](https://github.com/callumw-k/superpowers), a fork of [obra/superpowers](https://github.com/obra/superpowers) from v6.3.0. It keeps upstream's skills and adds:
+
+- Fewer stops for the human across brainstorming, writing-plans, subagent-driven-development, test-driven-development, requesting-code-review, using-git-worktrees and finishing-a-development-branch.
+- Wave execution: subagent-driven-development can run independent plan tasks at once, each in its own worktree.
+- Herdr handoffs at the spec and plan stages.
+- Unattended mode and the **autonomous-ticket** skill, which runs a Linear ticket from spec to PR.
+
+[The Basic Workflow](#the-basic-workflow) describes each of these where it happens. The fork is installed and used on Claude Code. The other harness sections below are upstream's, and installing from them gives you upstream Superpowers.
+
+Install it in Claude Code:
+
+```bash
+/plugin marketplace add callumw-k/superpowers
+/plugin install superpowers@superpowers-dev
+```
+
+Update it:
+
+```bash
+claude plugin marketplace update superpowers-dev
+claude plugin update superpowers@superpowers-dev
+```
+
 ## Table of Contents
 
+- [This fork](#this-fork)
 - [How it works](#how-it-works)
 - [Commercial Services](#commercial-services)
 - [Getting Started](#installation)
@@ -34,7 +60,7 @@ Superpowers is a complete software development methodology for your coding agent
 
 It starts from the moment you fire up your coding agent. As soon as it sees that you're building something, it *doesn't* just jump into trying to write code. Instead, it steps back and asks you what you're really trying to do. 
 
-Once it's teased a spec out of the conversation, it shows it to you in chunks short enough to actually read and digest. 
+Once it's teased a spec out of the conversation, it writes it to a file and asks you to review that once. 
 
 After you've signed off on the design, your agent puts together an implementation plan that's clear enough for an enthusiastic junior engineer with poor taste, no judgement, no project context, and an aversion to testing to follow. It emphasizes true red/green TDD, YAGNI (You Aren't Gonna Need It), and DRY. 
 
@@ -52,7 +78,9 @@ Installation differs by harness. If you use more than one, install Superpowers s
 
 ### Claude Code
 
-Superpowers is available via the [official Claude plugin marketplace](https://claude.com/plugins/superpowers)
+This fork installs from its own marketplace. See [This fork](#this-fork) for the commands. The two marketplaces below install upstream Superpowers, and a machine should have one or the other, not both.
+
+Upstream is available via the [official Claude plugin marketplace](https://claude.com/plugins/superpowers)
 
 #### Official Marketplace
 
@@ -260,19 +288,19 @@ turn loses the bootstrap — start a fresh session if skills stop triggering.
 
 ## The Basic Workflow
 
-1. **brainstorming** - Activates before writing code. Refines rough ideas through questions, explores alternatives, presents design in sections for validation. Saves design document.
+1. **brainstorming** - Activates before writing code. Classifies the request as a spike, a bounded change or architectural work, asks the clarifying questions that matter in one message, and proposes approaches. On the architectural path it writes the spec straight after the approach is chosen and asks for one review of the file.
 
-2. **using-git-worktrees** - Activates after design approval. Creates isolated workspace on new branch, runs project setup, verifies clean test baseline.
+2. **using-git-worktrees** - Activates after design approval. Creates isolated workspace on new branch, runs project setup, records the test baseline. Failing tests are noted as pre-existing and work continues, unless they cover the code being changed.
 
-3. **writing-plans** - Activates with approved design. Breaks work into bite-sized tasks (2-5 minutes each). Every task has exact file paths, complete code, verification steps.
+3. **writing-plans** - Activates with approved design. Breaks work into bite-sized tasks (2-5 minutes each). Every task has exact file paths, complete code, verification steps and a `Depends on` line. At handoff it offers serial or wave execution when the task graph has independent tasks, and a Herdr tab when running inside Herdr.
 
-4. **subagent-driven-development** or **executing-plans** - Activates with plan. Dispatches fresh subagent per task with two-stage review (spec compliance, then code quality), or executes in batches with human checkpoints.
+4. **subagent-driven-development** - Activates with plan. Dispatches fresh subagent per task with two-stage review (spec compliance, then code quality). In wave mode, independent tasks run at once in their own worktrees and merge into the plan branch a wave at a time, with the full suite run after each wave. **executing-plans** is used only when the harness has no subagent tool or the plan is one or two tasks on the same files.
 
-5. **test-driven-development** - Activates during implementation. Enforces RED-GREEN-REFACTOR: write failing test, watch it fail, write minimal code, watch it pass, commit. Deletes code written before tests.
+5. **test-driven-development** - Activates during implementation. Enforces RED-GREEN-REFACTOR: write failing test, watch it fail, write minimal code, watch it pass, commit. Deletes code written before tests. A test is written when the agent can name the bug it would catch. Plumbing, config and generated code are skipped with a one-line note.
 
-6. **requesting-code-review** - Activates between tasks. Reviews against plan, reports issues by severity. Critical issues block progress.
+6. **requesting-code-review** - Activates between tasks. Reviews against plan from the pre-work commit, reports issues by severity. Critical issues block progress.
 
-7. **finishing-a-development-branch** - Activates when tasks complete. Verifies tests, presents options (merge/PR/keep/discard), cleans up worktree.
+7. **finishing-a-development-branch** - Activates when tasks complete. Verifies tests, presents options (merge/squash-merge/PR/keep) naming the branch and its guessed base, cleans up worktree.
 
 Unattended: when `.superpowers/ticket.json` is present in a worktree, brainstorming, writing-plans, subagent-driven-development and finishing-a-development-branch replace their human gates with recorded rulings, and **autonomous-ticket** runs the chain stage by stage. See that skill for the blocker rule.
 
@@ -309,7 +337,7 @@ Superpowers is built by [Jesse Vincent](https://blog.fsck.com) and the rest of t
 - **using-git-worktrees** - Parallel development branches
 - **finishing-a-development-branch** - Merge/PR decision workflow
 - **autonomous-ticket** - Orchestrates a Linear ticket through spec, plan and implementation in fresh Herdr children with no human gate
-- **subagent-driven-development** - Fast iteration with two-stage review (spec compliance, then code quality)
+- **subagent-driven-development** - Fast iteration with two-stage review (spec compliance, then code quality), with opt-in wave execution for independent tasks
 
 **Meta**
 - **writing-skills** - Create new skills following best practices (includes testing methodology)
@@ -326,7 +354,9 @@ Read [the original release announcement](https://blog.fsck.com/2025/10/09/superp
 
 ## Contributing
 
-The general contribution process for Superpowers is below. Keep in mind that we don't generally accept contributions of new skills and that any updates to skills must work across all of the coding agents we support.
+Changes to this fork go as pull requests against `main` of `callumw-k/superpowers`. Bump the version in the plugin manifests in a separate commit, the way the existing `Bump version` commits do. Nothing here is sent upstream unless it meets upstream's bar below.
+
+The general contribution process for upstream Superpowers is below. Keep in mind that we don't generally accept contributions of new skills and that any updates to skills must work across all of the coding agents we support.
 
 1. Fork the repository
 2. Switch to the 'dev' branch
@@ -340,7 +370,7 @@ See `skills/writing-skills/SKILL.md` for the complete guide.
 
 ## Updating
 
-Superpowers updates are somewhat coding-agent dependent, but are often automatic.
+For this fork on Claude Code, run the two update commands under [This fork](#this-fork) and restart the session. Upstream updates are somewhat coding-agent dependent, but are often automatic.
 
 ## License
 
