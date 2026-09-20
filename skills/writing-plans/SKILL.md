@@ -164,6 +164,21 @@ If you find issues, fix them inline. No need to re-review — just fix and move 
 
 After saving the plan, pick the execution skill yourself and state it in the same message that asks for plan approval. Do not ask which approach.
 
+**Unattended mode.** When
+`test -f "$(git rev-parse --show-toplevel)/.superpowers/ticket.json"`
+passes and that file's `unattended` is true, there is no one to approve
+the plan. Compute the waves and run the pin check as described under "Offer
+waves" below. Add `**Execution:** waves` to the plan header only when the
+wave count is below the task count and the pin check does not refuse; when
+it refuses, leave the line out however the waves came out, as the
+interactive path does. Save the plan as
+`docs/superpowers/plans/<YYYY-MM-DD>-<key>-<feature-name>.md`, with `<key>`
+as `autonomous-ticket` defines it, so the orchestrator's artefact check
+finds it. Commit the plan on the current branch and end the turn. No menu,
+no "say go", no Herdr offer, no handoff: the orchestrator starts the
+executor. A spec requirement the plan cannot cover without a guess is a
+blocker under `autonomous-ticket`'s `## Blockers`.
+
 **Default:**
 - **REQUIRED SUB-SKILL:** Use superpowers:subagent-driven-development
 - Fresh subagent per task + two-stage review

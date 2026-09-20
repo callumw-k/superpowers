@@ -19,6 +19,41 @@ to EVERY task on EVERY path below — the ceremony scales with the task;
 the approval gate never does.
 </HARD-GATE>
 
+## Unattended Mode
+
+When `.superpowers/ticket.json` exists at the repo root with `unattended`
+true, there is no human partner in the pane and the gate above is replaced
+by rulings. Check with:
+
+```bash
+test -f "$(git rev-parse --show-toplevel)/.superpowers/ticket.json"
+```
+
+In unattended mode:
+
+- The request is the ticket in that file plus its comments on Linear.
+  Classify it as architectural whatever its size, so a spec is always
+  written. Explore project context as written.
+- Answer each clarifying question from the ticket and its comments. A
+  question they settle uses their answer. A question with a sensible
+  default gets a ruling. A question that meets the blocker test in
+  `autonomous-ticket`'s `## Blockers` stops the run by that procedure:
+  gather every such question first and post them in one comment.
+- Propose the approaches to yourself and take the recommended one. No
+  approval message.
+- The spec gets a `## Rulings` section, one line per ruling in the form
+  `<what was decided> — <why> — <what it costs if wrong>`, the approach
+  choice included. It is the first thing the PR reviewer reads.
+- Never offer the visual companion.
+- Name the spec `docs/superpowers/specs/<YYYY-MM-DD>-<key>-<topic>-design.md`,
+  with `<key>` as `autonomous-ticket` defines it, so the orchestrator's
+  artefact check finds it.
+- Run the spec self-review, commit the spec on the current branch, and end
+  the turn. No user review gate, no Herdr offer, no writing-plans: the
+  orchestrator starts the next stage.
+
+Everything below this section describes the interactive flow.
+
 ## Three Paths
 
 Before your first question, classify the request and say the

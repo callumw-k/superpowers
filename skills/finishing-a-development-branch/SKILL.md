@@ -23,6 +23,9 @@ Tests failing (<N> failures). Must fix before completing:
 [Show failures]
 ```
 
+In unattended mode (see Step 4), a failing suite here is a blocker under
+`autonomous-ticket`'s `## Blockers`, not a plain stop.
+
 **If tests pass:** continue to Step 2.
 
 ## Step 2: Detect Environment
@@ -76,6 +79,18 @@ Implementation complete. You're on a detached HEAD (externally managed workspace
 
 Which option?
 ```
+
+**Unattended mode.** When
+`test -f "$(git rev-parse --show-toplevel)/.superpowers/ticket.json"`
+passes, that file's `unattended` is true, and its `authorised` lists both
+`push` and `pr`, your human partner has already chosen the push-and-PR path
+(option 3 in the 4-option menu, option 1 in the detached-HEAD menu). Do not
+present the menu. Run Option 3 with `<feature-branch>` = `git.branch` and
+`<base-branch>` = `git.base`, using `gh` when `git.forge` is `github` and
+`tea` when it is `gitea`. When the PR exists, through the Linear MCP,
+comment its URL on the ticket at `ticket.url` and move the ticket to
+`linear.states.finished`. A failing suite in Step 1 is a blocker under
+`autonomous-ticket`'s `## Blockers`, not a report in the pane.
 
 Present the menu exactly as written — concise, with every option coming
 from the list above. Discarding the work happens only in response to your
