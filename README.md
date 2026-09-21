@@ -302,7 +302,7 @@ turn loses the bootstrap — start a fresh session if skills stop triggering.
 
 7. **finishing-a-development-branch** - Activates when tasks complete. Verifies tests, presents options (merge/squash-merge/PR/keep) naming the branch and its guessed base, cleans up worktree.
 
-Unattended: when `.superpowers/ticket.json` is present in a worktree, brainstorming, writing-plans, subagent-driven-development and finishing-a-development-branch replace their human gates with recorded rulings, and **autonomous-ticket** runs the chain stage by stage. See that skill for the blocker rule.
+Unattended: when `.superpowers/ticket.json` is present in a worktree, brainstorming, writing-plans, subagent-driven-development and finishing-a-development-branch replace their human gates with recorded rulings, and **autonomous-ticket** runs the chain stage by stage. See that skill for the blocker rule. A ticket sent back from review with comments gets a **ticket-revision** round on the same branch and PR, and returns to review when the orchestrator has verified it.
 
 Herdr: brainstorming and writing-plans offer to hand the next stage to a new Herdr tab, and autonomous-ticket runs its stages in Herdr tabs. All of it checks `HERDR_ENV=1`, which Herdr sets in the panes it manages. Outside Herdr the offers never appear and autonomous-ticket stops at its gate, so nothing else in the plugin changes.
 
@@ -337,6 +337,7 @@ Superpowers is built by [Jesse Vincent](https://blog.fsck.com) and the rest of t
 - **using-git-worktrees** - Parallel development branches
 - **finishing-a-development-branch** - Merge/PR decision workflow
 - **autonomous-ticket** - Orchestrates a Linear ticket through spec, plan and implementation in fresh Herdr children with no human gate
+- **ticket-revision** - Addresses one round of review feedback on a ticket's existing branch and PR, started by autonomous-ticket
 - **subagent-driven-development** - Fast iteration with two-stage review (spec compliance, then code quality), with opt-in wave execution for independent tasks
 
 **Meta**

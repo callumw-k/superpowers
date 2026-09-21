@@ -43,17 +43,39 @@ Every child and subagent in this worktree reads the same file. That is how
 |-------|------------|-------|---------------|------------------------------------------|
 | spec | `<key>-spec` | opus | `superpowers:brainstorming` | a file matching `docs/superpowers/specs/*-<key>-*.md` committed on `git.branch`, or the ticket in `linear.states.stuck` |
 | plan | `<key>-plan` | opus | `superpowers:writing-plans` | a file matching `docs/superpowers/plans/*-<key>-*.md` committed on `git.branch` whose header carries a `**Spec:**` line |
-| exec | `<key>-exec` | sonnet | `superpowers:subagent-driven-development` | commits on `git.branch` after the plan commit; the project's analyse step and tests green; the ticket in `linear.states.finished` with a comment containing the PR URL |
+| exec | `<key>-exec` | sonnet | `superpowers:subagent-driven-development` | commits on `git.branch` after the plan commit; the project's analyse step and tests green; a comment on the ticket containing the PR URL |
+| rev | `<key>-rev` | sonnet | `superpowers:ticket-revision` | the ticket in `linear.states.finished` |
 
 `<key>` is `ticket.key` lowercased with any character outside `[a-z0-9_-]`
 replaced by `-`. The same `<key>` appears in a child name and in the spec and
 plan filenames above, which is what makes those globs match.
+
+The rev row is current whenever exec is complete and the ticket is outside
+`linear.states.finished`, which is every resume after a PR exists: the
+daemon moves the ticket to In Progress before re-prompting you.
 
 ## Procedure
 
 1. **Find the stage.** Walk the table top to bottom; the current stage is the
    first whose artefact is absent. If none is absent, post the verification
    comment (step 6) if it is not already on the ticket, and stop.
+
+   When the stage is rev, run `herdr agent list`. If `<key>-rev` is live in
+   this workspace, go to step 3. Otherwise collect the feedback: every
+   comment after your most recent round-closing comment, one whose first
+   line is `🤖 orchestrator: verification`, `🤖 orchestrator: revision` or
+   `🤖 orchestrator: nothing to revise`, whose author is not the user the
+   Linear MCP is authenticated as (`get_user` for the current user). If the
+   ticket carries no such comment, exec was never verified: go to step 6.
+   If there is no feedback, post
+
+   ```
+   🤖 orchestrator: nothing to revise
+   no new comments since the last round
+   ```
+
+   move the ticket to `linear.states.finished`, and stop. Otherwise note the
+   cutoff comment's timestamp for the prompt in step 3.
 
 2. **Read the ticket's comments** through the Linear MCP, by `ticket.url`.
    Comments after the most recent move to `linear.states.stuck` are your
@@ -84,6 +106,9 @@ plan filenames above, which is what makes those globs match.
    - spec: `Ticket <key>, stage spec. Read .superpowers/ticket.json and the ticket's comments through the Linear MCP, then invoke superpowers:brainstorming for the ticket. Name the spec docs/superpowers/specs/<YYYY-MM-DD>-<key>-<topic>-design.md: today's date, then <key>, then the topic.`
    - plan: `Ticket <key>, stage plan. Read .superpowers/ticket.json, then invoke superpowers:writing-plans for the spec at <spec path>. Name the plan docs/superpowers/plans/<YYYY-MM-DD>-<key>-<feature-name>.md: today's date, then <key>, then the feature name.`
    - exec: `Ticket <key>, stage exec. Read .superpowers/ticket.json, then invoke superpowers:subagent-driven-development to execute the plan at <plan path>.`
+   - rev: `Ticket <key>, stage rev. Read .superpowers/ticket.json, then invoke superpowers:ticket-revision. Feedback is every comment after <ISO timestamp of the cutoff comment> not authored by the bot user.`
+
+   For rev, keep the `tab_id` from the create response; step 7 closes it.
 
 4. **Wait.** Run `herdr agent wait <child name>` as a background command
    with no timeout so you are woken when the child settles. Tell nobody;
@@ -95,7 +120,10 @@ plan filenames above, which is what makes those globs match.
      blocked in Herdr <pane id>` followed by those lines in a code fence,
      and stop. The daemon reports it too; your human partner answers in the
      pane and the ticket comes back to you as a resume.
-   - `idle` or `done`: check the stage's artefact.
+   - `idle` or `done`: for rev, stop if the ticket is in
+     `linear.states.stuck` (the child asked a question; the answer returns
+     as a resume), otherwise go to step 7. For any other stage, check the
+     stage's artefact.
      - Present: go to step 3 for the next stage, or to step 6 after exec.
      - Absent and the ticket is in `linear.states.stuck`: stop. The child
        asked a question on the ticket; the answer returns as a resume.
@@ -127,6 +155,45 @@ plan filenames above, which is what makes those globs match.
    `tea pr list`), comment the URL and move the ticket there yourself.
    Then stop.
 
+7. **Verify after rev.** In this worktree:
+
+   1. Read the child's `🤖 revision:` comment posted after the cutoff
+      comment from step 1, or after your re-prompt when the child was
+      already live. Absent: prompt the child once with "Post your
+      🤖 revision: comment on the ticket and end your turn", wait as in
+      step 4, and on the next wake, if it is still absent, post
+      `🤖 orchestrator: rev produced no report` with the child's last 30
+      lines and stop.
+   2. Run `git fetch origin <git.branch>`. The round is pushed when
+      `git rev-parse HEAD` equals `git rev-parse origin/<git.branch>`. Not
+      pushed: prompt the child once with "Push git.branch to origin", wait
+      as in step 4, and check once more. A round with no commits is pushed
+      by definition.
+   3. Run the project's analyse step and its full test command as in step
+      6, with the same single retry, prompting the rev child rather than
+      the exec child.
+   4. The round is green when it pushed and analyse and tests all passed.
+      If green, run `herdr tab close <tab_id>`. The `tab_id` is the one
+      from step 3, or, if you do not hold it from this round, the entry in
+      `herdr tab list --workspace "$HERDR_WORKSPACE_ID"` whose label is
+      `<key> rev`. If anything failed, leave the tab.
+   5. Post:
+
+      ```
+      🤖 orchestrator: revision
+      pushed: <yes|no>
+      analyse: <pass|fail>
+      tests: <N passed, M failed>
+      commits: <first sha7>..<last sha7> on <git.branch>, or none
+      PR: <url from the earlier verification comment>
+      tab: <tab_id> left open for inspection
+      ```
+
+      The `tab:` line is present only when the round was not green.
+   6. Move the ticket to `linear.states.finished`, whether or not everything
+      passed. The comment says what failed; your human partner decides.
+   7. Stop.
+
 ## Resume
 
 The daemon re-prompts you with "The ticket has been updated. Invoke
@@ -134,6 +201,11 @@ superpowers:autonomous-ticket to resume." when your human partner moves the
 ticket back to the trigger state. Start again at step 1: the artefacts on
 disk say which stage you are in, and step 3 re-prompts a child that is still
 alive rather than starting a new one, so its context survives the pause.
+
+A ticket moved back from In Review lands in the rev stage. A rev child that
+blocked or asked a question survives the pause and is re-prompted like any
+other child; one whose round was closed is gone, and the next round starts
+a fresh child under the same name.
 
 ## Blockers
 
@@ -164,7 +236,8 @@ On a blocker, the agent that hit it, child or orchestrator:
 - Never design, plan, implement or fix anything in this session. Prompt the
   stage child instead.
 - Never present a menu or ask a question in the pane.
-- Never close a tab, pane or workspace, including ones you created. Your
+- Never close a tab, pane or workspace, including ones you created, except
+  the `<key> rev` tab in step 7 after a round that pushed and passed. Your
   human partner reviews the PR from here.
 - One retry per stage, as written in steps 5 and 6. A second failure is a
   comment and a stop, not a third attempt.
@@ -177,3 +250,6 @@ On a blocker, the agent that hit it, child or orchestrator:
 | "The child is idle but I'm sure it finished, skip the artefact check" | Idle proves the turn ended, nothing more. Check the file, the commit, the ticket state. |
 | "Nobody answered the blocker, I'll pick the option I'd have chosen" | The ticket is in Needs Info. The answer comes back as a resume; until then there is nothing to do. |
 | "Tests failed on something the ticket didn't touch, so verification passed" | Report what ran. A failing suite is a failing suite; the comment says so and your human partner decides. |
+| "The feedback is one line, I'll make the change myself" | You implement nothing. Start the rev child. |
+| "Verification is red but the change is what they asked for, close the tab anyway" | Red leaves the tab. The comment says it is open and why. |
+| "No live rev child and no new comments, so re-run exec" | Exec is complete. Post nothing to revise and move the ticket back. |
