@@ -96,16 +96,16 @@ Subagent (general-purpose):
 
     ### Verdict
 
-    **Fix round:** [All findings addressed, no new Critical/Important
-    breakage | Findings remain open] — list the open ones.
+    **Fix round:** [All findings addressed, no new breakage | Findings
+    remain open] — list the open ones.
 ```
 
 **Placeholders:**
 - `[MODEL]` — REQUIRED: reviewer model per SKILL.md Model Selection; scoped
   re-reviews of small fix diffs take a cheap-to-mid tier
 - `[BRIEF_FILE]` — the task brief file (same file the implementer worked from)
-- `[FINDINGS]` — the Critical/Important findings and spec gaps from the
-  previous review, copied verbatim, one per bullet
+- `[FINDINGS]` — every finding and spec gap from the
+  previous review, at every severity, copied verbatim, one per bullet
 - `[REPORT_FILE]` — the implementer's report file (fix reports appended)
 - `[FIX_BASE_SHA]` — the head the previous review saw
 - `[HEAD_SHA]` — current commit

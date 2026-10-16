@@ -95,14 +95,14 @@ digraph process {
         "Adjudicate each open finding" [shape=box];
         "Any load-bearing finding?" [shape=diamond];
         "Rule and continue; stop only if every path forward is a guess" [shape=box];
-        "Park findings in ledger with rulings" [shape=box];
+        "Ledger findings: real ones open, contested ones parked with rulings" [shape=box];
         "Append completion to ledger, mark todo complete" [shape=box];
     }
 
     "Setup: worktree, ledger check, read plan, pre-flight review" [shape=box];
     "More tasks remain?" [shape=diamond];
     "Dispatch final code reviewer (../requesting-code-review/code-reviewer.md)" [shape=box];
-    "Final findings? ONE fix dispatch, one scoped re-review, adjudicate residuals" [shape=box];
+    "Final findings + open ledger lines? Fix dispatch, scoped re-review; residuals get one more" [shape=box];
     "Final review clean: delete this plan's workspace" [shape=box];
     "Use superpowers:finishing-a-development-branch" [shape=box style=filled fillcolor=lightgreen];
 
@@ -126,13 +126,13 @@ digraph process {
     "R = 5?" -> "Adjudicate each open finding" [label="yes - breaker trips"];
     "Adjudicate each open finding" -> "Any load-bearing finding?";
     "Any load-bearing finding?" -> "Rule and continue; stop only if every path forward is a guess" [label="yes"];
-    "Any load-bearing finding?" -> "Park findings in ledger with rulings" [label="no"];
-    "Park findings in ledger with rulings" -> "Append completion to ledger, mark todo complete";
+    "Any load-bearing finding?" -> "Ledger findings: real ones open, contested ones parked with rulings" [label="no"];
+    "Ledger findings: real ones open, contested ones parked with rulings" -> "Append completion to ledger, mark todo complete";
     "Append completion to ledger, mark todo complete" -> "More tasks remain?";
     "More tasks remain?" -> "Dispatch implementer subagent (./implementer-prompt.md)" [label="yes"];
     "More tasks remain?" -> "Dispatch final code reviewer (../requesting-code-review/code-reviewer.md)" [label="no"];
-    "Dispatch final code reviewer (../requesting-code-review/code-reviewer.md)" -> "Final findings? ONE fix dispatch, one scoped re-review, adjudicate residuals";
-    "Final findings? ONE fix dispatch, one scoped re-review, adjudicate residuals" -> "Final review clean: delete this plan's workspace";
+    "Dispatch final code reviewer (../requesting-code-review/code-reviewer.md)" -> "Final findings + open ledger lines? Fix dispatch, scoped re-review; residuals get one more";
+    "Final findings + open ledger lines? Fix dispatch, scoped re-review; residuals get one more" -> "Final review clean: delete this plan's workspace";
     "Final review clean: delete this plan's workspace" -> "Use superpowers:finishing-a-development-branch";
 }
 ```
@@ -404,16 +404,17 @@ Template: [task-reviewer-prompt.md](task-reviewer-prompt.md)
 
 ### 4. The fix loop
 
-The loop triggers when the review reports spec ❌, any Critical or Important
-finding, or a ⚠️ item you confirmed as a real gap.
+The loop triggers when the review reports spec ❌, any finding at any
+severity, or a ⚠️ item you confirmed as a real gap. Severity sets the order
+of the fix message, not whether a finding gets fixed: a review with only
+Minor findings still gets a fix round. Small findings left behind add up
+across tasks and branches, and nobody comes back for them.
 
 Before the loop starts, two routes leave it immediately:
 
-- Record Minor findings in the progress ledger as you go
-  (`Task <N>: minor (deferred): <one-liner>`), and point the final
-  whole-branch review at that list so it can triage which must be fixed
-  before merge. A roll-up nobody reads is a silent discard. Minor findings
-  never enter the loop.
+- A finding in code this branch has not touched is outside the task. Ledger
+  it as `Task <N>: outside branch — <one-liner>` and leave the code alone;
+  it reaches your human partner as a mention, not a change.
 - A finding labeled plan-mandated — or any finding that conflicts with
   what the plan's text requires — is yours to rule on: weigh the finding
   against the plan text, decide with the spec as the binding authority, and
@@ -449,9 +450,10 @@ where FIX_BASE is the head the previous review saw, and dispatch
 [re-review-prompt.md](re-review-prompt.md) with the findings list, the
 brief, the report file, and the printed diff path. The re-reviewer verdicts
 each finding ADDRESSED or NOT ADDRESSED and flags new breakage in the fix
-diff only. New Critical/Important breakage in the fix diff joins the open
-findings list. Out-of-scope observations go to the ledger as deferred
-minors — they never extend the loop.
+diff only. New breakage in the fix diff, at any severity, joins the open
+findings list. Out-of-scope observations never extend the loop: one in code
+this branch touched goes to the ledger as `Task <N>: open — <one-liner>`
+for the final fix dispatch; one in untouched code goes as `outside branch`.
 
 **After each round,** append to the ledger:
 `Task <N>: fix round <R>/5 (<X> addressed, <Y> open — <finding one-liners>; commits <a7>..<b7>)`
@@ -466,8 +468,9 @@ the cross-task context the reviewer lacks:
 - **The reviewer is wrong, or the point is contestable:** park it —
   `Task <N>: parked — <finding> — Ruling: <why the code stands>`. The final
   review sees both sides.
-- **Real, but nothing downstream builds on it:** park it the same way, with
-  a ruling that says it's real and deferred.
+- **Real, but nothing downstream builds on it:** ledger it as
+  `Task <N>: open — <finding>`. The final fix dispatch closes it with fresh
+  eyes on the most capable model. Real findings are never parked.
 - **Real and load-bearing** — a later task builds on it, or it reveals a
   plan defect: rule on the smallest change that unblocks the dependent work,
   ledger it as `Task <N>: Ruling: <finding> — <what you decided and why>`,
@@ -481,17 +484,16 @@ a silent discard is forbidden.
 
 ### 5. Complete the task
 
-When the review comes back clean — or every open finding is parked with a
-ruling at the cap — append the completion line to the ledger in the same
-message as your other bookkeeping:
+When the review comes back clean — or every open finding has a ledger line
+at the cap — append the completion line to the ledger in the same message
+as your other bookkeeping:
 
 - `Task <N>: complete (commits <base7>..<head7>, review clean)`
-- `Task <N>: complete (commits <base7>..<head7>, <K> parked)` after a
-  tripped breaker
+- `Task <N>: complete (commits <base7>..<head7>, <K> open, <P> parked)`
+  after a tripped breaker
 
 Then mark the todo complete and move on. Never move to the next task while
-the review has open Critical/Important issues that are neither fixed nor
-parked-with-ruling at the cap.
+the review has findings that are neither fixed nor ledgered at the cap.
 
 ## Waves
 
@@ -512,22 +514,31 @@ printed path in the final review dispatch, so the final reviewer reads
 one file instead of re-deriving the branch diff with git commands. Dispatch
 on the most capable available model (see Model Selection), using
 superpowers:requesting-code-review's
-[code-reviewer.md](../requesting-code-review/code-reviewer.md). Point it at
-the ledger's deferred-minor and parked lines so it can triage which must be
-fixed before merge.
+[code-reviewer.md](../requesting-code-review/code-reviewer.md), with the
+ledger's `open`, `parked` and `outside branch` lines as its
+`[CARRIED_FINDINGS]`. It marks each one FIX or LEAVE.
 
-If the final whole-branch review returns findings, dispatch ONE fix subagent
-with the complete findings list — not one fixer per finding.
+The fix list is every final finding in code this branch touched, at every
+severity, plus every `open` ledger line and every carried line the reviewer
+marked FIX. Findings in untouched code go to the ledger as
+`Final: outside branch — <one-liner>`. Dispatch ONE fix subagent with the
+complete list — not one fixer per finding.
 Per-finding fixers each rebuild context and re-run suites; a real
 session's final-review fix dispatch cost more than all its tasks combined.
-Then run exactly one scoped re-review of the fix dispatch
+Then run one scoped re-review of the fix dispatch
 (`bash scripts/review-package PLAN_FILE FIX_BASE HEAD` over the fix range,
 [re-review-prompt.md](re-review-prompt.md)).
-Adjudicate any residual findings as in the task loop's breaker: park with
-rulings, or rule on the load-bearing ones and ledger what you decided. Only
-the four classes above stop you here. There is no second fix dispatch —
-residual load-bearing findings surface to your human partner when
-finishing-a-development-branch presents the options.
+
+Residuals are the findings still NOT ADDRESSED plus new breakage in the fix
+diff, at any severity. If any remain, run one more fix round with the
+residuals and the report file: resume the first fixer when every residual is
+breakage in its own diff, otherwise dispatch a fresh fixer on the most
+capable model. Then one more scoped re-review. Park a residual only when the
+reviewer is wrong (`Final: parked — <finding> — Ruling: <why the code
+stands>`). Anything real still open after the second round goes to the
+ledger as `Final: still open — <finding> — <why two rounds did not close
+it>`.
+Only the four classes above stop you here.
 
 ## Finish
 
@@ -538,7 +549,13 @@ with what it costs if wrong. The list is exhaustive: if the ledger holds a
 ruling, the list holds it. That list is the only place the decisions you
 took on your human partner's behalf reach them — they read it and rework
 whatever you got wrong. A ruling that dies with the workspace was a decision
-made in secret.
+made in secret. Then list every `outside branch` line under "Outside this
+branch", and every `still open` line under "Still open", which is empty in
+a run that went well.
+
+Before you send it, ask of every line in those lists: if your human partner
+asked "should we fix this now?", would you say yes? Then it is not a
+leftover. Dispatch the fix before you report.
 
 When the final whole-branch review is clean and its fixes are merged,
 delete this plan's workspace (`rm -rf <workspace>`) — the git history is
@@ -557,6 +574,10 @@ Use superpowers:finishing-a-development-branch.
 | "One more round will converge" | Past the cap, rounds don't converge — the failure is structural. Adjudicate and route. |
 | "The reviewer will just find something new anyway" | Scoped re-reviews verify fixes; they cannot wander. New findings on untouched code go to the ledger, not the loop. |
 | "This finding is obviously wrong, I'll drop it" | You adjudicate only at the cap, and every ruling is a ledger entry. Silent discards are forbidden. |
+| "It's only Minor, it can wait" | Nothing comes back for it. Minors left on every branch become the codebase. Minor sets the order, not the outcome. |
+| "The run already cost too much to fix minors" | A minor rides in a fix round you are already paying for. Listing it hands your partner the same fix later, at a higher price. |
+| "The skill allows one fix dispatch, so I'll park the rest" | Residuals get a second dispatch. Park only what the reviewer got wrong. |
+| "I'll list it; they can ask me to fix it" | If you would say yes when they ask, the answer is already yes. Fix it before you report. |
 | "The fix was small, skip the re-review" | Unreviewed fixes are how regressions land. Every round ends with a scoped re-review. |
 | "Reviews slow the loop down" | The loop without reviews is just unverified churn. Reviews are the loop's brakes and steering. |
 | "Ledger bookkeeping is overhead" | The ledger is what survives compaction. Controllers without one have re-dispatched entire completed task sequences. |
@@ -622,7 +643,7 @@ Re-reviewer: Missing progress reporting — ADDRESSED (src/recovery.js:41).
 
 [After all tasks]
 [Run review-package PLAN_FILE MERGE_BASE HEAD; dispatch final code-reviewer, most capable model]
-Final reviewer: All requirements met. Deferred minors triaged: none block merge.
+Final reviewer: All requirements met. Carried findings: none open.
 
 [Delete this plan's workspace — the record now lives in git]
 

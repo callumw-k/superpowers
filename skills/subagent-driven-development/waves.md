@@ -136,8 +136,8 @@ does not hold the others. SKILL.md's bounded-wait guidance applies.
 
 ## The barrier
 
-The wave is done when every task in it has a `complete` line, clean or parked
-at cap. Then, in the plan worktree:
+The wave is done when every task in it has a `complete` line, clean or with
+its findings ledgered at cap. Then, in the plan worktree:
 
 1. **Disjointness check.** For each task,
    `git diff --name-only WAVE_BASE sdd/<plan>/task-N`. A file changed by two

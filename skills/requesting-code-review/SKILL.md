@@ -46,7 +46,7 @@ Dispatch a `general-purpose` subagent, filling the template at [code-reviewer.md
 **3. Act on feedback:**
 - Fix Critical issues immediately
 - Fix Important issues before proceeding
-- Note Minor issues for later
+- Fix Minor issues too, after the Important ones; minors left for later add up
 - Push back if reviewer is wrong (with reasoning)
 
 ## Example
@@ -72,7 +72,7 @@ HEAD_SHA=$(git rev-parse HEAD)
     Minor: Magic number (100) for reporting interval
   Assessment: Ready to proceed
 
-You: [Fix progress indicators]
+You: [Fix progress indicators, then the magic number]
 [Continue to Task 3]
 ```
 

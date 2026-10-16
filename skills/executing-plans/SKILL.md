@@ -83,7 +83,7 @@ digraph process {
     "Setup: worktree, workspace + ledger, read plan + spec, pre-flight scan" [shape=box];
     "More tasks remain?" [shape=diamond];
     "Final whole-branch review (fresh reviewer if you have one)" [shape=box];
-    "Re-grade, then: Critical/Important → ONE fix pass, each fix RED→GREEN + green suite; Minor → ledger" [shape=box];
+    "Re-grade, then ONE fix pass over every finding, each verified + green suite; untouched code → ledger as outside branch" [shape=box];
     "Final review clean: delete this plan's workspace" [shape=box];
     "Use superpowers:finishing-a-development-branch" [shape=box style=filled fillcolor=lightgreen];
 
@@ -99,8 +99,8 @@ digraph process {
     "task-done: run tests, ledger the result; mark todo complete" -> "More tasks remain?";
     "More tasks remain?" -> "task-start: brief + BASE; read the brief" [label="yes"];
     "More tasks remain?" -> "Final whole-branch review (fresh reviewer if you have one)" [label="no"];
-    "Final whole-branch review (fresh reviewer if you have one)" -> "Re-grade, then: Critical/Important → ONE fix pass, each fix RED→GREEN + green suite; Minor → ledger";
-    "Re-grade, then: Critical/Important → ONE fix pass, each fix RED→GREEN + green suite; Minor → ledger" -> "Final review clean: delete this plan's workspace";
+    "Final whole-branch review (fresh reviewer if you have one)" -> "Re-grade, then ONE fix pass over every finding, each verified + green suite; untouched code → ledger as outside branch";
+    "Re-grade, then ONE fix pass over every finding, each verified + green suite; untouched code → ledger as outside branch" -> "Final review clean: delete this plan's workspace";
     "Final review clean: delete this plan's workspace" -> "Use superpowers:finishing-a-development-branch";
 }
 ```
@@ -266,36 +266,44 @@ or why it is now a finding> — <cost if wrong>`. Re-grade first, by effect: the
 spec is a vision document, and a finding's grade is what a reasonable
 person using this software gets if it ships, not whether the spec names
 the input that triggers it — a reviewer who set a finding at Minor
-because the spec was silent has graded the spec, not the effect. Then:
+because the spec was silent has graded the spec, not the effect. The grade
+sets the order you fix in, not whether you fix. Then:
 
-- **Critical and Important** enter the fix pass.
-- **Minor** goes to the ledger as `Final: minor (deferred): <one-liner>`
-  and to your final message under "Deferred minors". Minors never enter
-  the fix pass, and never become rulings — a ruling is a decision about a
-  conflict, not a note that you declined a polish suggestion.
+- **Every finding in code this branch touched** enters the fix pass,
+  Minor included. Small findings left behind add up across branches, and
+  nobody comes back for them.
+- **A finding in code this branch never touched** goes to the ledger as
+  `Final: outside branch — <one-liner>` and to your final message under
+  "Outside this branch". Leave that code alone.
 
-Fix the Critical and Important findings yourself — you are the
-implementer here — in ONE pass. Each fix is verified by TDD, not by a
+Fix them yourself — you are the implementer here — in ONE pass, most
+severe first. A fix that changes behavior is verified by TDD, not by a
 second reviewer: write the test that reproduces the finding, watch it
-fail, make it pass, then run the whole suite. Record each in the ledger as
-`Final: fixed <finding> — <test name> RED→GREEN, suite <N>/<N>`. A fix
-without a test that failed first is not verified; a suite that is not
+fail, make it pass, then run the whole suite. Record it in the ledger as
+`Final: fixed <finding> — <test name> RED→GREEN, suite <N>/<N>`. A fix with
+no behavior a test could pin (a name, a log level, dead code, a constant
+hoisted out of a loop) is verified by the green suite alone: record it as
+`Final: fixed <finding> — no behavior change, suite <N>/<N>`. A behavior
+fix without a test that failed first is not verified; a suite that is not
 green after the pass means the pass is not over. Do not dispatch a
 re-review: it would re-read a diff whose covering tests already answer
 "addressed" and whose suite run already answers "broke nothing".
 
-A finding you decide not to fix is a ruling — `Final: Ruling: <finding> —
-<why the code stands> — <cost if wrong>` — and reaches your human partner
-in the rulings list. There is no second fix pass.
+Leave a finding unfixed only when the reviewer is wrong: that is a ruling —
+`Final: Ruling: <finding> — <why the code stands> — <cost if wrong>` — and
+reaches your human partner in the rulings list. Cost, time, and "it's only
+Minor" are not reasons the code stands. The test for every finding you are
+about to leave: if your human partner asked "should we fix this now?",
+would you say yes? Then fix it now. There is no second fix pass.
 
 ## Finish
 
 Before you delete anything, collect every ledger line containing
 `Ruling:` into your final message under "Rulings I made", in the order you
-made them, each with what it costs if wrong, and every `minor (deferred)`
-line under "Deferred minors". Both lists are exhaustive. Your final
+made them, each with what it costs if wrong, and every `outside branch`
+line under "Outside this branch". Both lists are exhaustive. Your final
 message is the only place the decisions you took on your human partner's
-behalf — and the findings you chose not to act on — reach them.
+behalf — and the code you noticed but did not own — reach them.
 
 When the final review is clean and its fixes are committed, delete this
 plan's workspace directory — the git history is the record now. Sibling
@@ -318,7 +326,9 @@ Use superpowers:finishing-a-development-branch.
 | "Subagents are slow and expensive, I'll skip the final review too" | Inline already removed the per-task reviewers. One review of the whole branch is the floor, not the ceiling. |
 | "The reviewer said Minor, so it's Minor" | The label graded the spec's silence. Grade what the person gets. Re-grade, then gate. |
 | "The fix is obvious, no need for a failing test first" | The failing test is the only proof the finding was real and is now gone. Without it you have a diff and a hope. |
-| "I'll fix the minors too while I'm in there" | Every minor you fix is a test, a fix, and a suite run your partner did not ask for. Ledger them; your partner decides. |
+| "It's only Minor, I'll list it for my partner" | A listed minor is a fix your partner has to ask for later. They asked for the branch done. Fix it in this pass. |
+| "They chose inline to save cost, so I'll skip the minors" | Inline saves the per-task reviewers, not the fixes. A minor costs one edit and the suite run you already owe. |
+| "If they ask what to fix, I'll have an answer" | Then you already know it should be fixed. Fix it before you report. |
 
 ## Example Workflow
 
@@ -355,17 +365,19 @@ Task 2: Recovery modes
 ...
 
 [After all tasks: review-package plan MERGE_BASE HEAD; dispatch code-reviewer, most capable model]
-Reviewer: One Important finding — progress reporting interval hardcoded. Two Minor.
-[Re-grade: Important stands; minors → ledger as deferred]
+Reviewer: One Important finding — progress reporting interval hardcoded. Two Minor: README lacks a usage example; lib/log.js (untouched) has an unused export.
+[Re-grade: Important stands; README minor is in this branch → fix pass; lib/log.js → outside branch]
 [Fix pass: test_progress_interval_configurable RED → extract PROGRESS_INTERVAL → GREEN; suite 12/12; commit]
+[Fix pass: add README usage example; suite 12/12; commit]
 [Ledger: Final: fixed hardcoded interval — test_progress_interval_configurable RED→GREEN, suite 12/12]
+[Ledger: Final: fixed README usage example — no behavior change, suite 12/12]
+[Ledger: Final: outside branch — lib/log.js has an unused export]
 
 Rulings I made:
 - Task 2: install_hook → installHook (brief typo; cost if wrong: one rename)
 
-Deferred minors:
-- README lacks a usage example
-- recovery.js could split verify/repair into two files
+Outside this branch:
+- lib/log.js has an unused export
 
 [Delete this plan's workspace — the record now lives in git]
 

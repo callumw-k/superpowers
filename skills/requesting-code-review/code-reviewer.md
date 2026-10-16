@@ -40,6 +40,16 @@ Subagent (general-purpose):
     findings by their effect on that person, not by whether the spec
     mentions the trigger.
 
+    ## Carried Findings
+
+    [CARRIED_FINDINGS]
+
+    These were recorded during the work and are not yet fixed, or were set
+    aside with a ruling. For each line, say FIX or LEAVE, with one line of
+    why. LEAVE is for a ruling you agree with or code this branch never
+    touched; anything real in the branch's code is FIX, whatever its size.
+    If the section above is empty, skip this.
+
     ## Declined to judge
 
     Before your verdict, list every behavior you considered and set aside
@@ -95,6 +105,9 @@ Subagent (general-purpose):
     ## Calibration
 
     Categorize issues by actual severity. Not everything is Critical.
+    Every issue you report gets fixed, whatever its severity, so an issue is
+    something you want changed: name the change. A preference you would not
+    ask the author to act on is not an issue; leave it out.
     Acknowledge what was done well before listing issues — accurate praise
     helps the implementer trust the rest of the feedback.
 
@@ -116,7 +129,7 @@ Subagent (general-purpose):
     #### Important (Should Fix)
     [Architecture problems, missing features, poor error handling, test gaps]
 
-    #### Minor (Nice to Have)
+    #### Minor (Fix, Lowest Urgency)
     [Code style, optimization opportunities, documentation polish]
 
     For each issue:
@@ -124,6 +137,9 @@ Subagent (general-purpose):
     - What's wrong
     - Why it matters
     - How to fix (if not obvious)
+
+    ### Carried Findings
+    [Each carried line: FIX or LEAVE, with why. Omit when none were given.]
 
     ### Recommendations
     [Improvements for code quality, architecture, or process]
@@ -156,6 +172,8 @@ Subagent (general-purpose):
 - `[PLAN_OR_REQUIREMENTS]` — what it should do (plan file path, task text, or requirements)
 - `[BASE_SHA]` — starting commit
 - `[HEAD_SHA]` — ending commit
+- `[CARRIED_FINDINGS]` — the ledger's `open`, `parked` and `outside branch`
+  lines, verbatim; empty when the caller keeps no ledger
 
 **Reviewer returns:** Strengths, Issues (Critical / Important / Minor), Recommendations, Assessment
 
