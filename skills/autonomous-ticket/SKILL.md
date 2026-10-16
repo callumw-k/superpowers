@@ -90,10 +90,12 @@ daemon moves the ticket to In Progress before re-prompting you.
    The ticket has been updated. Read its new comments through the Linear MCP and continue.
    ```
 
-   Otherwise create a tab in this workspace and start a fresh child:
+   Otherwise create a tab in this workspace and start a fresh child. Take
+   the workspace ID from `herdr pane current --current`, not from
+   `$HERDR_WORKSPACE_ID`, which goes stale when a workspace is renumbered:
 
    ```bash
-   herdr tab create --workspace "$HERDR_WORKSPACE_ID" --cwd "$PWD" --label "<key> <stage>" --no-focus
+   herdr tab create --workspace <workspace_id> --cwd "$PWD" --label "<key> <stage>" --no-focus
    herdr agent start <child name> --kind claude --pane <root_pane from the create response> -- --model <stage model>
    ```
 
@@ -175,7 +177,7 @@ daemon moves the ticket to In Progress before re-prompting you.
    4. The round is green when it pushed and analyse and tests all passed.
       If green, run `herdr tab close <tab_id>`. The `tab_id` is the one
       from step 3, or, if you do not hold it from this round, the entry in
-      `herdr tab list --workspace "$HERDR_WORKSPACE_ID"` whose label is
+      `herdr tab list --workspace <workspace_id>` whose label is
       `<key> rev`. If anything failed, leave the tab.
    5. Post:
 

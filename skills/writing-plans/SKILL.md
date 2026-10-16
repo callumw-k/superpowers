@@ -202,7 +202,7 @@ interactive path does. Save the plan as
 `docs/superpowers/plans/<YYYY-MM-DD>-<key>-<feature-name>.md`, with `<key>`
 as `autonomous-ticket` defines it, so the orchestrator's artefact check
 finds it. Commit the plan on the current branch and end the turn. No menu,
-no "say go", no Herdr offer, no handoff: the orchestrator starts the
+no Herdr offer, no handoff: the orchestrator starts the
 executor. A spec requirement the plan cannot cover without a guess is a
 blocker under `autonomous-ticket`'s `## Blockers`.
 
@@ -214,23 +214,29 @@ Pick Native when the harness has no subagent tool, or when the tasks lean little
 
 **Subagent-driven:**
 - **REQUIRED SUB-SKILL:** Use superpowers:subagent-driven-development
-- Say: "Plan saved to `docs/superpowers/plans/<filename>.md`. I'll execute it with subagent-driven-development because <reason>. Review the plan and say go."
+- Say: "Plan saved to `docs/superpowers/plans/<filename>.md`. I'll execute it with subagent-driven-development because <reason>." Then the ending below.
 
 **Native:**
 - **REQUIRED SUB-SKILL:** Use superpowers:executing-plans
-- Say: "Plan saved to `docs/superpowers/plans/<filename>.md`. I'll execute it natively with executing-plans because <reason>. Review the plan and say go."
+- Say: "Plan saved to `docs/superpowers/plans/<filename>.md`. I'll execute it natively with executing-plans because <reason>." Then the ending below.
 
 **Method already supplied:**
-- Say: "Plan saved to `docs/superpowers/plans/<filename>.md`. Review it and say go when it captures what you want." Then use the supplied method.
+- Say: "Plan saved to `docs/superpowers/plans/<filename>.md`." Then the ending below, and use the supplied method.
 
-**Offer a Herdr tab when running inside Herdr.** Check
-`test "${HERDR_ENV:-}" = 1` before the handoff message. When it passes,
-the handoff message and the waves menu also offer to run the chosen
-skill in a new Herdr tab (Sonnet): the handoff message ends
-`say go, or go herdr to run it in a new Herdr tab (Sonnet)`,
-and the waves menu carries the line shown there. If your human partner
-picks it, follow `herdr-handoff.md` in this skill's directory as the
-executor. When the check fails, say nothing about Herdr.
+**The ending.** Check `test "${HERDR_ENV:-}" = 1` before the handoff
+message. When it passes, end the message with:
+
+```
+Once you're happy with it:
+
+1. Run it here
+2. Run it in a new Herdr tab (Sonnet)
+```
+
+When the check fails, end it with "Review it and tell me when it's
+ready." and say nothing about Herdr. If your human partner picks 2, follow
+`herdr-handoff.md` in this skill's directory as the executor instead of
+invoking the skill here.
 
 **Offer waves when the graph allows them.** When you picked
 Subagent-driven, before the handoff message,
@@ -248,21 +254,20 @@ a menu:
 ```
 Plan saved to `<path>`. Review it, then pick how subagent-driven-development runs it:
 
-1. Serial: <N> tasks, one at a time
-2. Waves: <W> waves (<sizes>), one worktree per task, full suite after each wave
-
-Append herdr to run it in a new Herdr tab (Sonnet), e.g. "2 herdr".
+1. Serial here: <N> tasks, one at a time
+2. Waves here: <W> waves (<sizes>), one worktree per task, full suite after each wave
+3. Serial in a new Herdr tab (Sonnet)
+4. Waves in a new Herdr tab (Sonnet)
 
 Which option?
 ```
 
-Drop the `Append herdr` line when the Herdr check above failed.
+Drop options 3 and 4 when the Herdr check above failed.
 
-Option 2: add `**Execution:** waves` to the plan header, commit, then invoke
-subagent-driven-development. Option 1: invoke it as-is. With `herdr`
-appended, do the same header edit and commit for option 2, then hand off
-via `herdr-handoff.md` instead of invoking the skill here. A Herdr child is
-never pinned to a native worktree, so `2 herdr` is available even when the
-pin check refused option 2.
+Options 2 and 4: add `**Execution:** waves` to the plan header and commit.
+Options 1 and 2 then invoke subagent-driven-development here. Options 3 and
+4 hand off via `herdr-handoff.md` instead. A Herdr child is never pinned to
+a native worktree, so option 4 is available even when the pin check
+refused option 2.
 
 One reply covers both the plan and the execution choice. Your human partner can redirect the choice in that reply.

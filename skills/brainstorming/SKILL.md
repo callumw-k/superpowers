@@ -217,11 +217,19 @@ round of questions the check produces. Without a subagent tool, read the
 document as that builder yourself.
 
 When `test "${HERDR_ENV:-}" = 1` passes, end the hand-over message with:
-"Say go to write the plan here, or go herdr to hand it to a new Herdr tab
-(Opus)." When the check fails, say nothing about Herdr. If they choose
-`go herdr`, follow `skills/writing-plans/herdr-handoff.md` as the planner
-instead of invoking writing-plans here: the child session invokes
-writing-plans on the document, and you wait for it.
+
+```
+Once you're happy with it, where should I write the plan?
+
+1. Here
+2. In a new Herdr tab (Opus)
+```
+
+When the check fails, end it with "Review it and tell me when it's
+ready." and say nothing about Herdr. If they pick 2, follow
+`skills/writing-plans/herdr-handoff.md` as the planner instead of invoking
+writing-plans here: the child session writes the plan from the document,
+and you wait for it.
 
 <HARD-GATE>
 Nothing gets built until your human partner approves the full

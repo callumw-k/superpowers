@@ -102,6 +102,11 @@ is theirs.
 
 ### Option 1: Merge Locally
 
+A session isolated in a native worktree (Claude Code's `EnterWorktree`)
+cannot run git against the main checkout. Leave it with its exit tool's
+keep action first (`ExitWorktree` with `keep`), which returns you to the
+main checkout, then run the block below.
+
 ```bash
 # Get main repo root for CWD safety
 MAIN_ROOT=$(git -C "$(git rev-parse --git-common-dir)/.." rev-parse --show-toplevel)
@@ -176,7 +181,8 @@ This will permanently delete:
 Type 'discard' to confirm.
 ```
 
-Wait for that exact confirmation. When it arrives:
+Wait for that exact confirmation. When it arrives, leave a native
+worktree with keep as in Option 1, then:
 
 ```bash
 MAIN_ROOT=$(git -C "$(git rev-parse --git-common-dir)/.." rev-parse --show-toplevel)
@@ -197,9 +203,25 @@ main repo root — worktree removal must run from outside the worktree —
 and use the `GIT_DIR`/`GIT_COMMON`/`WORKTREE_PATH` values captured in
 Step 2, from before that directory change.
 
+**Close Herdr child tabs first.** If this session handed stages of this
+branch to Herdr children (writing-plans' `herdr-handoff.md`), close each
+`planner:` and `executor:` tab you created before removing the worktree
+they run in. Use the tab IDs you kept, or the matching labels in
+`herdr tab list --workspace <workspace_id>`:
+
+```bash
+herdr agent get <child name>
+herdr tab close <tab_id>
+```
+
+Closing a tab ends its agent. Close only a child that is `idle` or
+`done`. One that is still working is not finished: leave its tab and tell
+your human partner.
+
 **If `GIT_DIR == GIT_COMMON`:** Normal repo, no worktree to clean up. Done.
 
-**If `WORKTREE_PATH` is under `.worktrees/` or `worktrees/`:** Superpowers
+**If `WORKTREE_PATH` is under `.worktrees/`, `worktrees/` or
+`.claude/worktrees/`:** Superpowers or Claude Code's `EnterWorktree`
 created this worktree — we own cleanup:
 
 ```bash
@@ -231,7 +253,7 @@ Which?
 Carry out the choice, then remove the worktree.
 
 **Otherwise:** The host environment owns this workspace — leave it in
-place. If your platform provides a workspace-exit tool, use it.
+place.
 
 ## Quick Reference
 
@@ -252,7 +274,7 @@ place. If your platform provides a workspace-exit tool, use it.
 | "They seem done with this feature — I'll offer to discard it" | The menu is complete as written. Discard happens only when your human partner asks for it in so many words. |
 | "'Yeah, get rid of it' counts as confirmation" | Only the typed word `discard` authorizes deletion. |
 | "The PR is up, so the worktree is clutter now" | PR feedback gets fixed in that worktree. It stays until the work lands. |
-| "This other worktree looks stale — I'll clean it too" | Clean up only worktrees under `.worktrees/` or `worktrees/`. Everything else belongs to the host. |
+| "This other worktree looks stale — I'll clean it too" | Clean up only this branch's worktree, and only under `.worktrees/`, `worktrees/` or `.claude/worktrees/`. Everything else belongs to the host. |
 | "Removal refused — `--force` is just finishing the cleanup" | The refusal means files exist only in that worktree. `--force` destroys them permanently. Show your human partner and ask. |
 | "The merged-result failure is probably flaky" | A failing merged result stops everything. Branch and worktree stay put while you investigate. |
 | "The base branch is obviously main" | Name the fork point in the menu so your human partner can correct it. Merging into the wrong base is expensive to undo. |
