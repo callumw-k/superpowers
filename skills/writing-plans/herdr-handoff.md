@@ -15,7 +15,7 @@ Two roles, fixed by which skill is handing off:
 | Role | Handing off from | Child reads | Child invokes | Model |
 |------|------------------|-------------|---------------|-------|
 | planner | brainstorming (spec approved) | the spec | superpowers:writing-plans | opus |
-| executor | writing-plans (plan approved) | the plan | superpowers:subagent-driven-development | sonnet |
+| executor | writing-plans (plan approved) | the plan | the skill picked at the handoff: superpowers:subagent-driven-development or superpowers:executing-plans | sonnet |
 
 Opus for the planner because the child has to design the tasks itself.
 Sonnet for the executor because the plan already carries the code.
@@ -69,8 +69,8 @@ syntax.
    `[parent] X`, never `[parent] [child] X`.
 
 6. **Prompt the child.** One message: the file to read, the skill to
-   invoke, and for the executor the execution mode already recorded in the
-   plan header (serial or waves). Do not paste the file's contents, the
+   invoke, and for a subagent-driven executor the execution mode already
+   recorded in the plan header (serial or waves). Do not paste the file's contents, the
    child reads it. Send without `--wait`:
 
    ```bash

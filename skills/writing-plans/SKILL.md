@@ -7,9 +7,7 @@ description: Use when you have a spec or requirements for a multi-step task, bef
 
 ## Overview
 
-Write comprehensive implementation plans assuming the engineer has zero context for our codebase and questionable taste. Document everything they need to know: which files to touch for each task, code, testing, docs they might need to check, how to test it. Give them the whole plan as bite-sized tasks. DRY. YAGNI. TDD. Frequent commits.
-
-Assume they are a skilled developer, but know almost nothing about our toolset or problem domain. Assume they don't know good test design very well.
+Write implementation plans for an engineer who has not seen this codebase or this spec. Assume they write idiomatic code in the project's language once they know the exact interface and the exact test, and that they will make a reasonable choice wherever the plan leaves one open. What they cannot know is what you decided: which files, which names and signatures, which values from the spec, which tests prove each task. Document those. Give them the whole plan as bite-sized tasks. DRY. YAGNI. TDD. Frequent commits.
 
 **Announce at start:** "I'm using the writing-plans skill to create the implementation plan."
 
@@ -42,9 +40,9 @@ deliverable needs them; split only where a reviewer could meaningfully
 reject one task while approving its neighbor. Each task ends with an
 independently testable deliverable.
 
-## Bite-Sized Task Granularity
+## Step Granularity
 
-**Each step is one action (2-5 minutes):**
+**Each step is one action with a checkable result:**
 - "Write the failing test" - step
 - "Run it to make sure it fails" - step
 - "Implement the minimal code to make the test pass" - step
@@ -58,7 +56,7 @@ independently testable deliverable.
 ```markdown
 # [Feature Name] Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development to implement this plan task-by-task (superpowers:executing-plans only where subagents are unavailable). Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use the execution skill named at the plan handoff (superpowers:subagent-driven-development or superpowers:executing-plans) to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** [One sentence describing what this builds]
 
@@ -79,6 +77,18 @@ this line entirely, SDD runs tasks serially by default]
 naming and copy rules, platform requirements — one line each, with exact
 values copied verbatim from the spec. Every task's requirements implicitly
 include this section.]
+
+## Review Focus
+
+[The five input classes or failure modes the spec implies but no task's
+tests exercise that are most likely to bite a person using this software
+— one line each, naming the input or condition and the behavior a
+reasonable person would expect, most likely first. The spec is a vision
+document: it says what the software must do, not everything it will
+meet, and its silence on an input is not permission for that input to
+break the program. Write the list here, once, with the spec in front of
+you. Then, for each line, add the test that pins it to the task that
+owns the code, in that task's own step style.]
 
 ---
 ```
@@ -117,12 +127,11 @@ def test_specific_behavior():
 Run: `pytest tests/path/test.py::test_name -v`
 Expected: FAIL with "function not defined"
 
-- [ ] **Step 3: Write minimal implementation**
+- [ ] **Step 3: Implement `function(input: InputType) -> ResultType` in `exact/path/to/file.py`**
 
-```python
-def function(input):
-    return expected
-```
+One line on the approach when the signature and the test leave a choice
+(which library call, which data structure); a code block only for an
+algorithm they do not determine.
 
 - [ ] **Step 4: Run test to verify it passes**
 
@@ -137,16 +146,30 @@ git commit -m "feat: add specific feature"
 ```
 ````
 
-## No Placeholders
+## What a Step Contains
 
-Every step must contain the actual content an engineer needs. These are **plan failures** — never write them:
-- "TBD", "TODO", "implement later", "fill in details"
-- "Add appropriate error handling" / "add validation" / "handle edge cases"
-- "Write tests for the above" (without actual test code)
-- "Similar to Task N" (repeat the code — the engineer may be reading tasks out of order)
-- Steps that describe what to do without showing how (code blocks required for code steps)
-- References to types, functions, or methods not defined in any task
-- A task without a `**Depends on:**` line, or one that names a task whose Produces it does not Consume and whose files it does not touch
+A step is done when the implementer can write exactly one reasonable thing
+from it. That is the whole requirement: unambiguous, not complete. Each kind
+of step carries what makes it unambiguous and nothing more:
+
+- **A test step:** the test's name and its assertions, as code, with the
+  spec's exact values in them.
+- **A code step:** the exact signature (name, parameters, return type), the
+  file it lives in, and the specific values the spec pins. The implementer
+  writes the body. A body appears only for an algorithm the signature and
+  tests do not determine, or for exact copy the spec fixes.
+- **A verification step:** the command to run and the output that means it
+  passed.
+- **A reference to another task:** that task's Interfaces block says what
+  to use; the plan does not repeat that task's code.
+
+A plan is the set of decisions the implementer cannot make alone. A plan
+longer than the code it describes has written the code instead. Lines that
+decide nothing ("TBD", "handle edge cases", "add appropriate validation",
+"write tests for the above", a type or function no task defines) are the
+opposite failure. So is a task without a `**Depends on:**` line, or one that
+names a task whose Produces it does not Consume and whose files it does not
+touch. The self-review catches all of these.
 
 ## Self-Review
 
@@ -154,15 +177,19 @@ After writing the complete plan, look at the spec with fresh eyes and check the 
 
 **1. Spec coverage:** Skim each section/requirement in the spec. Can you point to a task that implements it? List any gaps.
 
-**2. Placeholder scan:** Search your plan for red flags — any of the patterns from the "No Placeholders" section above. Fix them.
+**2. Step scan:** Every step must let the implementer write exactly one reasonable thing, and no step may carry more than that: a line that decides nothing is a gap, a function body the signature and tests already determine is a transcript. Fix both. Check every task's `Depends on` line against its Interfaces and Files while you are there.
 
 **3. Type consistency:** Do the types, method signatures, and property names you used in later tasks match what you defined in earlier tasks? A function called `clearLayers()` in Task 3 but `clearFullLayers()` in Task 7 is a bug.
+
+**4. Review Focus:** For each input class or failure mode the spec implies, is there a task whose tests exercise it? The five uncovered ones most likely to bite a person go in the Review Focus section, and each line there gets its test added to the owning task. An empty section means you checked and found none, not that you skipped the check.
+
+**5. Proportion:** Compare the plan's length to the spec's. A plan several times longer than the spec it implements is a transcript of the program, not a plan. If code blocks are most of the document, replace bodies with signatures, test names and assertions, and check that each step is still unambiguous.
 
 If you find issues, fix them inline. No need to re-review — just fix and move on. If you find a spec requirement with no task, add the task.
 
 ## Execution Handoff
 
-After saving the plan, pick the execution skill yourself and state it in the same message that asks for plan approval. Do not ask which approach.
+After saving and self-reviewing the plan, pick the execution method yourself and state it in the same message that asks for plan review. Do not ask which approach. If your human partner already supplied a method, use it, and the message only asks them to review the plan.
 
 **Unattended mode.** When
 `test -f "$(git rev-parse --show-toplevel)/.superpowers/ticket.json"`
@@ -179,27 +206,39 @@ no "say go", no Herdr offer, no handoff: the orchestrator starts the
 executor. A spec requirement the plan cannot cover without a guess is a
 blocker under `autonomous-ticket`'s `## Blockers`.
 
-**Default:**
+**The two methods:**
+- **Subagent-driven** (superpowers:subagent-driven-development) - A fresh subagent implements each task and a fresh reviewer checks it before the next one starts, then a whole-branch review at the end. Most thorough; costs a fresh context per task and per review.
+- **Native** (superpowers:executing-plans) - You implement every task in this session, then one fresh reviewer on the most capable model checks the whole branch. Cheapest and fastest; no independent review until the end. Runs well with a mid-tier session model, since the plan carries the design.
+
+Pick Native when the harness has no subagent tool, or when the tasks lean little on each other's interfaces and a shipped mistake would be cheap to catch at the final review (one or two tasks on the same files always qualify). Otherwise pick Subagent-driven. The reason is one sentence from the plan: how much the tasks depend on each other's interfaces, how many there are, what a shipped mistake would cost.
+
+**Subagent-driven:**
 - **REQUIRED SUB-SKILL:** Use superpowers:subagent-driven-development
-- Fresh subagent per task + two-stage review
-- Say: "Plan saved to `docs/superpowers/plans/<filename>.md`. I'll execute it with subagent-driven-development. Review the plan and say go."
+- Say: "Plan saved to `docs/superpowers/plans/<filename>.md`. I'll execute it with subagent-driven-development because <reason>. Review the plan and say go."
+
+**Native:**
+- **REQUIRED SUB-SKILL:** Use superpowers:executing-plans
+- Say: "Plan saved to `docs/superpowers/plans/<filename>.md`. I'll execute it natively with executing-plans because <reason>. Review the plan and say go."
+
+**Method already supplied:**
+- Say: "Plan saved to `docs/superpowers/plans/<filename>.md`. Review it and say go when it captures what you want." Then use the supplied method.
 
 **Offer a Herdr tab when running inside Herdr.** Check
 `test "${HERDR_ENV:-}" = 1` before the handoff message. When it passes,
-the default message and the waves menu also offer to run
-subagent-driven-development in a new Herdr tab (Sonnet): the default
-message ends `say go, or go herdr to run it in a new Herdr tab (Sonnet)`,
+the handoff message and the waves menu also offer to run the chosen
+skill in a new Herdr tab (Sonnet): the handoff message ends
+`say go, or go herdr to run it in a new Herdr tab (Sonnet)`,
 and the waves menu carries the line shown there. If your human partner
 picks it, follow `herdr-handoff.md` in this skill's directory as the
-executor. The inline path is unaffected. When the check fails, say nothing
-about Herdr.
+executor. When the check fails, say nothing about Herdr.
 
-**Offer waves when the graph allows them.** Before the handoff message,
+**Offer waves when the graph allows them.** When you picked
+Subagent-driven, before the handoff message,
 compute the waves from the tasks' `Depends on` and Files the way
 subagent-driven-development's `waves.md` ("Scheduling a wave") does: a task
 is ready when its dependencies are done, tasks in one wave share no files,
 at most four per wave. If the wave count equals the task count, the graph is
-a chain and the default message above stands. Also run
+a chain and the Subagent-driven message above stands. Also run
 subagent-driven-development's pin check (its SKILL.md, Setup): a session
 pinned to a native worktree cannot run waves until it leaves it, so when
 the check refuses, option 2 ends with `(this session is pinned to a native
@@ -225,13 +264,5 @@ appended, do the same header edit and commit for option 2, then hand off
 via `herdr-handoff.md` instead of invoking the skill here. A Herdr child is
 never pinned to a native worktree, so `2 herdr` is available even when the
 pin check refused option 2.
-
-**Inline instead, only when one of these observable conditions holds:**
-- The harness has no subagent tool
-- The plan has one or two tasks that all touch the same files, so a dispatch would cost more context than doing the work
-
-Then:
-- **REQUIRED SUB-SKILL:** Use superpowers:executing-plans
-- Say: "Plan saved to `<path>`. I'll execute it inline via executing-plans because <condition>. Review the plan and say go."
 
 One reply covers both the plan and the execution choice. Your human partner can redirect the choice in that reply.
