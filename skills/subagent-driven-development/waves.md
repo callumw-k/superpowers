@@ -70,7 +70,7 @@ task in the wave branches from it, and every task's review BASE is it.
 **Worktrees.** From the plan worktree, for each task N in the wave:
 
 ```
-scripts/task-worktree PLAN_FILE N
+bash scripts/task-worktree PLAN_FILE N
 ```
 
 It prints the worktree path (`<main-root>/.worktrees/<plan>/task-N`, branch
@@ -122,7 +122,7 @@ worktree. Nothing is created in a task worktree except the task's own code.
 
 **Per-task loop.** Unchanged, running against the task's branch:
 
-- Review package: `scripts/review-package PLAN_FILE WAVE_BASE sdd/<plan>/task-N`
+- Review package: `bash scripts/review-package PLAN_FILE WAVE_BASE sdd/<plan>/task-N`
   from the plan worktree. Worktrees share one object store, so the branch is
   visible there. Give the reviewer the task worktree path as well, for files
   the diff doesn't show.
@@ -151,7 +151,7 @@ at cap. Then, in the plan worktree:
    task: resume its implementer with "rebase `sdd/<plan>/task-N` onto
    `<current plan head>`, resolve the conflict in `<files>`, re-run the
    covering tests", then
-   `scripts/review-package PLAN_FILE <current plan head> sdd/<plan>/task-N`
+   `bash scripts/review-package PLAN_FILE <current plan head> sdd/<plan>/task-N`
    and a re-review scoped to "new breakage in the conflict files only" —
    the task's own findings were already closed before its `complete` line
    — and retry the merge. The round counts toward the task's five. After
