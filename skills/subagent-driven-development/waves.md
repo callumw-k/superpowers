@@ -14,9 +14,31 @@ of up to four concurrent loops, with one full-suite run per round.
 and branch from the same commit, so their merges cannot conflict. Every rule
 below exists to keep that true or to notice when it wasn't.
 
+## Setup
+
+Write `Execution: waves (cap 4)` as the ledger's second line. A serial run
+has no `Execution:` line. A wave run can drop to serial part way ("Probe",
+below); on resume, the last `Execution:` line decides the mode, not your
+memory.
+
+Skip using-git-worktrees' native worktree tool and create the plan worktree
+with its git fallback (Step 1b), staying in the launch directory and
+dispatching with `Work from:` set to the plan worktree. A session inside a
+native worktree (Claude Code's EnterWorktree) pins every subagent it
+dispatches: git in any other worktree is refused, and a subagent that enters
+its task worktree by path is refused there too.
+
+**Pin check**, before anything is created: run `git worktree list` to read
+the main root, then run `git -C <main root> rev-parse --short HEAD` as a
+literal command, not inside a script. The harness refusing it means the
+session is pinned. Then ask, before any dispatch: leave the native worktree
+(ExitWorktree with `keep`, the worktree stays and serves as the plan
+worktree) and run waves, or run serial. Serial gets the ledger line
+`Execution: serial (session pinned to a native worktree)`.
+
 ## Pre-flight: the graph
 
-The pre-flight scan in SKILL.md already tables every pair of tasks sharing a
+The pre-flight scan (references/preflight.md) already tables every pair of tasks sharing a
 file or interface. Three checks join it (in wave mode and serial mode alike;
 a wrong `Depends on` is a plan defect either way), each ruled on and ledgered
 like every other scan finding:
@@ -36,7 +58,7 @@ Graph: Task 3 <- 1, 2
 Graph: Task 4 <- none
 ```
 
-Tasks you batch under SKILL.md's "Batch small same-shape work" are one node:
+Tasks you batch under references/batching.md are one node:
 its branch and worktree take the lowest task number in the batch, and the
 `Wave` line lists every number.
 
@@ -67,7 +89,8 @@ read them, and the barrier waits on the slowest task anyway.
 **Wave base.** `WAVE_BASE=$(git rev-parse HEAD)` on the plan branch. Every
 task in the wave branches from it, and every task's review BASE is it.
 
-**Worktrees.** From the plan worktree, for each task N in the wave:
+**Worktrees.** From the plan worktree, for each task N in the wave, run
+this skill's `task-worktree` by its absolute path:
 
 ```
 bash scripts/task-worktree PLAN_FILE N
@@ -82,7 +105,7 @@ directory is in a state this run did not create: inspect before continuing.
 
 **Probe.** Before the first multi-task wave, dispatch one subagent (cheapest
 model) to run `git status` in the first task worktree and report the output.
-A session inside a native worktree pins its subagents (SKILL.md, Setup):
+A session inside a native worktree pins its subagents (Setup, above):
 creating task worktrees still succeeds, git in them is refused, and without
 the probe an implementer discovers that after it has written code. Moving
 the task worktrees under the native tool's directory does not lift the pin,
@@ -123,7 +146,7 @@ worktree. Nothing is created in a task worktree except the task's own code.
 **Per-task loop.** Unchanged, running against the task's branch:
 
 - Review package: `bash scripts/review-package PLAN_FILE WAVE_BASE sdd/<plan>/task-N`
-  from the plan worktree. Worktrees share one object store, so the branch is
+  by its absolute path, from the plan worktree. Worktrees share one object store, so the branch is
   visible there. Give the reviewer the task worktree path as well, for files
   the diff doesn't show.
 - Fix rounds resume the implementer, which is still in its worktree.
@@ -152,16 +175,17 @@ its findings ledgered at cap. Then, in the plan worktree:
    `<current plan head>`, resolve the conflict in `<files>`, re-run the
    covering tests", then
    `bash scripts/review-package PLAN_FILE <current plan head> sdd/<plan>/task-N`
-   and a re-review scoped to "new breakage in the conflict files only" —
+   (by its absolute path, from the plan worktree) and a re-review scoped to "new breakage in the conflict files only" —
    the task's own findings were already closed before its `complete` line
    — and retry the merge. The round counts toward the task's five. After
    the retried merge succeeds, append a fresh
    `Task <N>: complete (commits <plan-head7>..<branch-head7>, conflict
-   round)` line so SKILL.md's "last line is a fix round means mid-loop"
-   resume rule does not misfire. A second conflict on the same task is a
+   round)` line so references/resuming.md's "last line is a fix round means
+   mid-loop" rule does not misfire. A second conflict on the same task is a
    graph defect: stop and ask.
 3. **Suite.** Run the project's full test command once on the merged head.
-4. **Suite failure.** As the final-review fix dispatch in SKILL.md: ONE
+4. **Suite failure.** As the final-review fix dispatch in
+   references/final-review.md: ONE
    integration fixer (fresh implementer, standard model, `Work from:` the
    plan worktree, given the failing output, the wave's task list and their
    report paths), one scoped re-review over its diff, then adjudicate
@@ -206,7 +230,7 @@ Wave 2: merged (tasks 3, 4, 6 -> e4f5a6b, suite pass)
 Execution: serial (probe refused in .worktrees/plan/task-3)
 ```
 
-Resume rules, on top of SKILL.md's:
+Resume rules, on top of references/resuming.md:
 
 - The last `Execution:` line decides the mode. `Execution: waves` on line 2
   with no later `Execution: serial` line means wave mode. No `Execution:`
@@ -214,7 +238,7 @@ Resume rules, on top of SKILL.md's:
 - A `Wave <W>: start` with no matching `merged` line is a wave in flight.
   For a wave listing two or more tasks, run `task-worktree` for each first;
   it reuses what exists and re-adds what a crash or `git clean` removed. A
-  wave listing one task resumes under SKILL.md's rules, in the plan
+  wave listing one task resumes under references/resuming.md, in the plan
   worktree. Then, per task: a `complete` line means the branch is done and
   waiting for the barrier; fix-round lines mean resume the loop at the next
   round; nothing means dispatch it.

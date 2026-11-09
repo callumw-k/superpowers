@@ -123,7 +123,8 @@ The workspace and ledger are shared with superpowers:subagent-driven-development
 and the new one resumes from the same ledger.
 
 - Each plan owns a workspace: at skill start, run
-  `../subagent-driven-development/scripts/sdd-workspace PLAN_FILE` — it
+  `../subagent-driven-development/scripts/sdd-workspace PLAN_FILE` by its
+  absolute path, from the working tree you're executing in — it
   prints the plan's git-ignored directory
   (`<repo-root>/.superpowers/sdd/<plan-basename>/`), home to every
   artifact for THIS plan: ledger, briefs, review packages. Another plan's
@@ -169,7 +170,8 @@ in the workspace and read its tail; read a brief, not the whole plan.
 
 ### 1. Take the task
 
-- Run this skill's `scripts/task-start PLAN_FILE N`. It prints the brief
+- Run this skill's `scripts/task-start PLAN_FILE N` by its absolute path,
+  from the working tree you're executing in. It prints the brief
   path and BASE (the commit the task's range is cut from) in one call.
   Read the brief for every task, including ones you remember from setup:
   what you remember is a summary, the brief has the exact values,
@@ -222,7 +224,7 @@ the claim. If any item is missing, the task is not complete: finish it.
 ### 4. Complete the task
 
 Run this skill's `scripts/task-done PLAN_FILE N BASE -- <test command>`
-with the test command the brief names for the whole task. It runs the
+by its absolute path, from the working tree you're executing in, with the test command the brief names for the whole task. It runs the
 tests, keeps the full output in the workspace, prints the tail, and — only
 if they pass — appends the completion line to the ledger:
 
@@ -234,7 +236,7 @@ mark the todo complete and take the next task.
 ## Final Review
 
 Run `../subagent-driven-development/scripts/review-package PLAN_FILE MERGE_BASE HEAD`
-(MERGE_BASE = the commit the branch started from, e.g.
+by its absolute path, from the working tree you're executing in (MERGE_BASE = the commit the branch started from, e.g.
 `git merge-base main HEAD`) and review from the file it prints.
 
 **With a subagent tool:** dispatch the reviewer on the most capable
@@ -329,57 +331,3 @@ Use superpowers:finishing-a-development-branch.
 | "It's only Minor, I'll list it for my partner" | A listed minor is a fix your partner has to ask for later. They asked for the branch done. Fix it in this pass. |
 | "They chose inline to save cost, so I'll skip the minors" | Inline saves the per-task reviewers, not the fixes. A minor costs one edit and the suite run you already owe. |
 | "If they ask what to fix, I'll have an answer" | Then you already know it should be fixed. Fix it before you report. |
-
-## Example Workflow
-
-```
-You: I'm using the executing-plans skill to implement this plan inline.
-
-[Setup: worktree verified]
-[Read plan once: docs/superpowers/plans/feature-plan.md; spec read]
-[Resolve workspace: sdd-workspace docs/superpowers/plans/feature-plan.md — no ledger inside, fresh start]
-[Pre-flight scan: 2 shared-interface rows, 4 self-consistency rows, clean; written to ledger]
-[Create todos for all tasks]
-
-Task 1: Hook installation script
-
-[task-start plan 1 → brief read; BASE a1b2c3d]
-[Step 1: write failing test — written]
-[Step 2: run it — FAIL: install_hook not defined. Matches Expected.]
-[Step 3: implement — written]
-[Step 4: run it — PASS 1/1. Matches Expected.]
-[Step 5: commit — d4e5f6a]
-[Contract: tests ran, output read, no deviations]
-[task-done plan 1 a1b2c3d -- npm test -- hooks → ledger: Task 1: complete (commits a1b2c3d..d4e5f6a, tests: npm test -- hooks → 1/1 pass)]
-
-Task 2: Recovery modes
-
-[task-start plan 2 → brief read; BASE d4e5f6a]
-[Step 2: run failing test — FAIL, but on an import error: Task 1 exported
- installHook, brief consumes install_hook]
-[Ruling: brief's consumer name is a typo against Task 1's Produces block;
- use installHook — Ledger: Task 2: Ruling: install_hook → installHook — matches Task 1 Produces — cost if wrong: one rename]
-[Steps 2-5 as planned; commit b7c8d9e]
-[task-done plan 2 d4e5f6a -- npm test -- recovery → ledger: Task 2: complete (commits d4e5f6a..b7c8d9e, tests: npm test -- recovery → 8/8 pass)]
-
-...
-
-[After all tasks: review-package plan MERGE_BASE HEAD; dispatch code-reviewer, most capable model]
-Reviewer: One Important finding — progress reporting interval hardcoded. Two Minor: README lacks a usage example; lib/log.js (untouched) has an unused export.
-[Re-grade: Important stands; README minor is in this branch → fix pass; lib/log.js → outside branch]
-[Fix pass: test_progress_interval_configurable RED → extract PROGRESS_INTERVAL → GREEN; suite 12/12; commit]
-[Fix pass: add README usage example; suite 12/12; commit]
-[Ledger: Final: fixed hardcoded interval — test_progress_interval_configurable RED→GREEN, suite 12/12]
-[Ledger: Final: fixed README usage example — no behavior change, suite 12/12]
-[Ledger: Final: outside branch — lib/log.js has an unused export]
-
-Rulings I made:
-- Task 2: install_hook → installHook (brief typo; cost if wrong: one rename)
-
-Outside this branch:
-- lib/log.js has an unused export
-
-[Delete this plan's workspace — the record now lives in git]
-
-Using superpowers:finishing-a-development-branch.
-```
