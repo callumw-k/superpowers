@@ -17,7 +17,7 @@ hundred decisions they never mention the way they would have made them.
 ## Unattended Mode
 
 When `.superpowers/ticket.json` exists at the repo root with `unattended`
-true, there is no human partner in the pane and the conversation below is
+true, there is no human partner in the terminal and the conversation below is
 replaced by rulings. Check with:
 
 ```bash

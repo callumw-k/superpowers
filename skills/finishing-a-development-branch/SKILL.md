@@ -90,7 +90,7 @@ present the menu. Run Option 3 with `<feature-branch>` = `git.branch` and
 `tea` when it is `gitea`. When the PR exists, through the Linear MCP,
 comment its URL on the ticket at `ticket.url` and move the ticket to
 `linear.states.finished`. A failing suite in Step 1 is a blocker under
-`autonomous-ticket`'s `## Blockers`, not a report in the pane.
+`autonomous-ticket`'s `## Blockers`, not a report in the terminal.
 
 Present the menu exactly as written — concise, with every option coming
 from the list above. Discarding the work happens only in response to your

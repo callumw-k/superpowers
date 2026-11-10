@@ -74,7 +74,7 @@ Read `.superpowers/ticket.json` from the repo root. If it is missing, or its
 
 ## Rules
 
-- Never call `AskUserQuestion` and never wait in the pane; nobody is
+- Never call `AskUserQuestion` and never wait in the terminal; nobody is
   watching it.
 - Never move the ticket to `linear.states.finished`; the orchestrator does
   that after verifying. The only state you set is `linear.states.stuck`, by

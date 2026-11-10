@@ -237,13 +237,13 @@ On a blocker, the agent that hit it, child or orchestrator:
    forced.
 2. Moves the ticket to `linear.states.stuck`.
 3. Ends its turn. It never calls `AskUserQuestion` and never waits in the
-   pane; nobody is watching it.
+   terminal; nobody is watching it.
 
 ## Rules
 
 - Never design, plan, implement or fix anything in this session. Prompt the
   stage child instead.
-- Never present a menu or ask a question in the pane.
+- Never present a menu or ask a question in the terminal.
 - Never end a terminal, including ones you started, except `<key>-rev` in
   step 7 after a round that pushed and passed. Your
   human partner reviews the PR from here.
