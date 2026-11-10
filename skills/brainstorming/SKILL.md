@@ -99,9 +99,8 @@ Move the work forward, with one of these:
   has to be built, like a constraint, a conflict, or a cheaper path, say
   so plainly. How to build it comes later, once you understand what they
   want (see Lay out the approaches). End with one line inviting
-  corrections. Then, if they haven't told you why they want it, even if
-  you can guess, ask about that: one open question in their own terms,
-  with nothing to pick from. If they have told you, and their request
+  corrections. Their asking for it settles the why: the echo carries
+  your read of the why in one line they can correct. If their request
   and the project leave open something whose answer would change what
   gets built, ask about the one that would change it most; when its
   choices can be named, sketch each concretely, with what it trades off
