@@ -203,20 +203,19 @@ main repo root — worktree removal must run from outside the worktree —
 and use the `GIT_DIR`/`GIT_COMMON`/`WORKTREE_PATH` values captured in
 Step 2, from before that directory change.
 
-**Close Herdr child tabs first.** If this session handed stages of this
-branch to Herdr children (writing-plans' `herdr-handoff.md`), close each
-`planner:` and `executor:` tab you created before removing the worktree
-they run in. Use the tab IDs you kept, or the matching labels in
-`herdr tab list --workspace <workspace_id>`:
+**End Herdr children first.** If this session handed stages of this
+branch to Herdr children (writing-plans' `herdr-handoff.md`), end each
+`planner-` and `executor-` terminal you started before removing the
+worktree they run in:
 
 ```bash
-herdr agent get <child name>
-herdr tab close <tab_id>
+hc get <child name>
+hc kill <child name>
+hc rm <child name>
 ```
 
-Closing a tab ends its agent. Close only a child that is `idle` or
-`done`. One that is still working is not finished: leave its tab and tell
-your human partner.
+End only a child whose `status.state` is `idle` or `done`. One that is
+still working is not finished: leave it and tell your human partner.
 
 **If `GIT_DIR == GIT_COMMON`:** Normal repo, no worktree to clean up. Done.
 

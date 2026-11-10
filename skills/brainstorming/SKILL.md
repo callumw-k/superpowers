@@ -295,14 +295,14 @@ calls you made so they can check those while reading. That's the only
 round of questions the check produces. Without a subagent tool, read the
 document as that builder yourself.
 
-When `test "${HERDR_ENV:-}" = 1` passes, end the message that hands over
+When `test -n "${HC_TERMINAL_ID:-}"` passes, end the message that hands over
 the design doc, short or full, with:
 
 ```
 Once you're happy with it, where should I write the plan?
 
 1. Here
-2. In a new Herdr tab (Opus)
+2. In a new Herdr terminal (Opus)
 ```
 
 When the check fails, end it with "Review it and tell me when it's

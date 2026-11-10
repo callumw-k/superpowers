@@ -223,14 +223,14 @@ Pick Native when the harness has no subagent tool, or when the tasks lean little
 **Method already supplied:**
 - Say: "Plan saved to `docs/superpowers/plans/<filename>.md`." Then the ending below, and use the supplied method.
 
-**The ending.** Check `test "${HERDR_ENV:-}" = 1` before the handoff
+**The ending.** Check `test -n "${HC_TERMINAL_ID:-}"` before the handoff
 message. When it passes, end the message with:
 
 ```
 Once you're happy with it:
 
 1. Run it here
-2. Run it in a new Herdr tab (Sonnet)
+2. Run it in a new Herdr terminal (Sonnet)
 ```
 
 When the check fails, end it with "Review it and tell me when it's
@@ -256,8 +256,8 @@ Plan saved to `<path>`. Review it, then pick how subagent-driven-development run
 
 1. Serial here: <N> tasks, one at a time
 2. Waves here: <W> waves (<sizes>), one worktree per task, full suite after each wave
-3. Serial in a new Herdr tab (Sonnet)
-4. Waves in a new Herdr tab (Sonnet)
+3. Serial in a new Herdr terminal (Sonnet)
+4. Waves in a new Herdr terminal (Sonnet)
 
 Which option?
 ```

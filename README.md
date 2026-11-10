@@ -8,7 +8,7 @@ This is [callumw-k/superpowers](https://github.com/callumw-k/superpowers), a for
 
 - Fewer stops for the human across brainstorming, writing-plans, subagent-driven-development, test-driven-development, requesting-code-review, using-git-worktrees and finishing-a-development-branch.
 - Wave execution: subagent-driven-development can run independent plan tasks at once, each in its own worktree.
-- Herdr handoffs at the spec and plan stages.
+- Herdr handoffs at the spec and plan stages, through herdr-core's `hc`.
 - Unattended mode and the **autonomous-ticket** skill, which runs a Linear ticket from spec to PR.
 
 [The Basic Workflow](#the-basic-workflow) describes each of these where it happens. The fork is installed and used on Claude Code. The other harness sections below are upstream's, and installing from them gives you upstream Superpowers.
@@ -339,7 +339,7 @@ Restart any active Muse sessions after installing so the `SessionStart` hook tak
 
 2. **using-git-worktrees** - Activates after design approval. Creates isolated workspace on new branch, runs project setup, records the test baseline. Failing tests are noted as pre-existing and work continues, unless they cover the code being changed.
 
-3. **writing-plans** - Activates with approved design. Breaks work into bite-sized tasks (2-5 minutes each). Every task has exact file paths, complete code, verification steps and a `Depends on` line. At handoff it offers serial or wave execution when the task graph has independent tasks, and a Herdr tab when running inside Herdr.
+3. **writing-plans** - Activates with approved design. Breaks work into bite-sized tasks (2-5 minutes each). Every task has exact file paths, complete code, verification steps and a `Depends on` line. At handoff it offers serial or wave execution when the task graph has independent tasks, and a Herdr terminal when running inside Herdr.
 
 4. **subagent-driven-development** or **executing-plans** - Activates with plan. writing-plans picks one and says why. Subagent-driven dispatches a fresh subagent per task with a review after each (most thorough). In wave mode, independent tasks run at once in their own worktrees and merge into the plan branch a wave at a time, with the full suite run after each wave. Native (executing-plans) implements every task inline in the current session with one fresh review of the whole branch at the end (cheapest).
 
@@ -351,7 +351,7 @@ Restart any active Muse sessions after installing so the `SessionStart` hook tak
 
 Unattended: when `.superpowers/ticket.json` is present in a worktree, brainstorming, writing-plans, subagent-driven-development and finishing-a-development-branch replace their human gates with recorded rulings, and **autonomous-ticket** runs the chain stage by stage. See that skill for the blocker rule. A ticket sent back from review with comments gets a **ticket-revision** round on the same branch and PR, and returns to review when the orchestrator has verified it.
 
-Herdr: brainstorming and writing-plans offer to hand the next stage to a new Herdr tab, and autonomous-ticket runs its stages in Herdr tabs. All of it checks `HERDR_ENV=1`, which Herdr sets in the panes it manages. Outside Herdr the offers never appear and autonomous-ticket stops at its gate, so nothing else in the plugin changes.
+Herdr: brainstorming and writing-plans offer to hand the next stage to a new Herdr terminal, and autonomous-ticket runs its stages in Herdr terminals, all through herdr-core's `hc` CLI. All of it checks that `HC_TERMINAL_ID` is set, which herdr-core sets in the terminals it runs. Outside Herdr the offers never appear and autonomous-ticket stops at its gate, so nothing else in the plugin changes.
 
 **The agent checks for relevant skills before any task.** Mandatory workflows, not suggestions.
 
@@ -390,7 +390,7 @@ Superpowers is built by [Jesse Vincent](https://blog.fsck.com) and the rest of t
 - **receiving-code-review** - Responding to feedback
 - **using-git-worktrees** - Parallel development branches
 - **finishing-a-development-branch** - Merge/PR decision workflow
-- **autonomous-ticket** - Orchestrates a Linear ticket through spec, plan and implementation in fresh Herdr children with no human gate
+- **autonomous-ticket** - Orchestrates a Linear ticket through spec, plan and implementation in fresh Herdr terminals with no human gate
 - **ticket-revision** - Addresses one round of review feedback on a ticket's existing branch and PR, started by autonomous-ticket
 - **subagent-driven-development** - Fast iteration with two-stage review (spec compliance, then code quality), with opt-in wave execution for independent tasks
 

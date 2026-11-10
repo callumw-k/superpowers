@@ -14,7 +14,7 @@ and will move the ticket. You change the code, push, and report.
 
 ## The gate
 
-Check `test "${HERDR_ENV:-}" = 1` first. If it fails, say that you are not
+Check `test -n "${HC_TERMINAL_ID:-}"` first. If it fails, say that you are not
 running inside Herdr and stop.
 
 ## The marker

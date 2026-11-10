@@ -1,6 +1,6 @@
 ---
 name: autonomous-ticket
-description: Use when a Herdr pane is prompted to work a Linear ticket unattended and `.superpowers/ticket.json` is present in the worktree. Orchestrates spec, plan and implementation in fresh child agents, verifies each stage, and reports to the ticket. Never for interactive sessions.
+description: Use when a Herdr terminal is prompted to work a Linear ticket unattended and `.superpowers/ticket.json` is present in the worktree. Orchestrates spec, plan and implementation in fresh child agents, verifies each stage, and reports to the ticket. Never for interactive sessions.
 ---
 
 # Autonomous Ticket
@@ -8,21 +8,21 @@ description: Use when a Herdr pane is prompted to work a Linear ticket unattende
 Run one Linear ticket from description to pull request with no human in the
 loop. You are the orchestrator: you design nothing, plan nothing and
 implement nothing yourself. Each stage runs in a fresh Claude child in its
-own Herdr tab of this workspace, on this worktree, and you verify what it
+own Herdr terminal, on this worktree, and you verify what it
 produced before starting the next. Your context stays small, which is what
 lets you resume this ticket days later.
 
 **Announce at start:** "I'm using the autonomous-ticket skill to orchestrate
 ticket <key>."
 
-Invoke the `herdr` skill before the first `herdr` command; the CLI's usage
-output is the authority on syntax.
+Run `hc --skill` before the first `hc` command; `hc <command> --help` is
+the authority on syntax.
 
 ## The gate
 
-Check `test "${HERDR_ENV:-}" = 1` first. If it fails, say that you are not
-running inside Herdr and stop: every stage below spawns a Herdr tab, so
-there is nothing this skill can do from outside one.
+Check `test -n "${HC_TERMINAL_ID:-}"` first. If it fails, say that you are
+not running inside Herdr and stop: every stage below starts a Herdr
+terminal, so there is nothing this skill can do from outside one.
 
 ## The marker
 
@@ -60,8 +60,8 @@ daemon moves the ticket to In Progress before re-prompting you.
    first whose artefact is absent. If none is absent, post the verification
    comment (step 6) if it is not already on the ticket, and stop.
 
-   When the stage is rev, run `herdr agent list`. If `<key>-rev` is live in
-   this workspace, go to step 3. Otherwise collect the feedback: every
+   When the stage is rev, run `hc get <key>-rev`. If its `state` is
+   `live`, go to step 3. Otherwise collect the feedback: every
    comment after your most recent round-closing comment, one whose first
    line is `🤖 orchestrator: verification`, `🤖 orchestrator: revision` or
    `🤖 orchestrator: nothing to revise`, whose author is not the user the
@@ -83,45 +83,50 @@ daemon moves the ticket to In Progress before re-prompting you.
    as the description. Note whether there are any; the child's prompt says
    so.
 
-3. **Start or re-prompt the stage child.** Run `herdr agent list`. If an
-   agent with the stage's child name is live in this workspace, prompt it:
+3. **Start or re-prompt the stage child.** Run `hc get <child name>`. If
+   its `state` is `live`, its prompt is:
 
    ```
    The ticket has been updated. Read its new comments through the Linear MCP and continue.
    ```
 
-   Otherwise create a tab in this workspace and start a fresh child. Take
-   the workspace ID from `herdr pane current --current`, not from
-   `$HERDR_WORKSPACE_ID`, which goes stale when a workspace is renumbered:
+   Otherwise (`hc get` exits 3 when there is none, or shows `finished`)
+   start a fresh child:
 
    ```bash
-   herdr tab create --workspace <workspace_id> --cwd "$PWD" --label "<key> <stage>" --no-focus
-   herdr agent start <child name> --kind claude --pane <root_pane from the create response> -- --model <stage model>
+   hc run --bg --outlive-parent --no-notify --name <child name> --cwd "$PWD" -- claude --model <stage model>
+   hc wait <child name>
    ```
 
-   If `agent start` returns `agent_not_ready`, read the pane, post
-   `🤖 orchestrator: <stage> child could not start` with the last 30 lines
-   to the ticket, and stop.
+   `--outlive-parent` keeps the child across a restart of this session,
+   which is what lets a resume re-prompt it. If `hc wait` reports anything
+   but `idle`, read the screen with `hc read <child name> --lines 30`, post
+   `🤖 orchestrator: <stage> child could not start` with those lines to the
+   ticket, and stop.
 
-   Then prompt it, one message, without `--wait`:
+   A fresh child's prompt is one message:
 
    - spec: `Ticket <key>, stage spec. Read .superpowers/ticket.json and the ticket's comments through the Linear MCP, then invoke superpowers:brainstorming for the ticket. Name the spec docs/superpowers/specs/<YYYY-MM-DD>-<key>-<topic>-design.md: today's date, then <key>, then the topic.`
    - plan: `Ticket <key>, stage plan. Read .superpowers/ticket.json, then invoke superpowers:writing-plans for the spec at <spec path>. Name the plan docs/superpowers/plans/<YYYY-MM-DD>-<key>-<feature-name>.md: today's date, then <key>, then the feature name.`
    - exec: `Ticket <key>, stage exec. Read .superpowers/ticket.json, then invoke superpowers:subagent-driven-development to execute the plan at <plan path>.`
    - rev: `Ticket <key>, stage rev. Read .superpowers/ticket.json, then invoke superpowers:ticket-revision. Feedback is every comment after <ISO timestamp of the cutoff comment> not authored by the bot user.`
 
-   For rev, keep the `tab_id` from the create response; step 7 closes it.
+4. **Send and wait.** Every prompt to a child, here and in the steps
+   below, goes as a background command, so you are woken when the turn it
+   starts has ended:
 
-4. **Wait.** Run `herdr agent wait <child name>` as a background command
-   with no timeout so you are woken when the child settles. Tell nobody;
-   there is nobody to tell. End your turn.
+   ```bash
+   hc send --wait --timeout 86400 <child name> "<prompt>"
+   ```
 
-5. **On wake**, read `herdr agent get <child name>`:
-   - `blocked`: read the pane with `herdr agent read <child name> --source
-     recent-unwrapped --lines 30`, post `🤖 orchestrator: <stage> child
-     blocked in Herdr <pane id>` followed by those lines in a code fence,
-     and stop. The daemon reports it too; your human partner answers in the
-     pane and the ticket comes back to you as a resume.
+   Tell nobody; there is nobody to tell. End your turn.
+
+5. **On wake**, read `hc get <child name>` for its `status.state`:
+   - `blocked`: read the screen with `hc read <child name> --lines 30`,
+     post `🤖 orchestrator: <stage> child blocked in Herdr terminal <child
+     name>` followed by those lines in a code fence, and stop. The daemon
+     reports it too; your human partner answers in the terminal and the
+     ticket comes back to you as a resume.
    - `idle` or `done`: for rev, stop if the ticket is in
      `linear.states.stuck` (the child asked a question; the answer returns
      as a resume), otherwise go to step 7. For any other stage, check the
@@ -134,9 +139,12 @@ daemon moves the ticket to In Progress before re-prompting you.
        in step 4, and on the next wake, if it is still absent, post
        `🤖 orchestrator: <stage> produced no artefact` with the child's last
        30 lines and stop.
-   - `unknown`: read the pane before deciding anything. It does not mean
-     the child finished. If the pane shows a completed response, treat it as
-     `idle`; if it shows an approval or question UI, treat it as `blocked`.
+   - `error`, the terminal finished, or `not_started` from the send: read
+     the screen with `hc read <child name> --lines 30` before deciding
+     anything. A completed response is `idle`; an approval or question UI is
+     `blocked`. Otherwise post `🤖 orchestrator: <stage> child stopped` with
+     those lines and stop. After `not_started`, never resend blindly: the
+     prompt may still have arrived.
 
 6. **Verify after exec.** In this worktree run the project's analyse step
    and its full test command (from `package.json`, `Makefile`, `pubspec.yaml`
@@ -175,10 +183,8 @@ daemon moves the ticket to In Progress before re-prompting you.
       6, with the same single retry, prompting the rev child rather than
       the exec child.
    4. The round is green when it pushed and analyse and tests all passed.
-      If green, run `herdr tab close <tab_id>`. The `tab_id` is the one
-      from step 3, or, if you do not hold it from this round, the entry in
-      `herdr tab list --workspace <workspace_id>` whose label is
-      `<key> rev`. If anything failed, leave the tab.
+      If green, run `hc kill <key>-rev` and then `hc rm <key>-rev`. If
+      anything failed, leave the terminal.
    5. Post:
 
       ```
@@ -188,10 +194,10 @@ daemon moves the ticket to In Progress before re-prompting you.
       tests: <N passed, M failed>
       commits: <first sha7>..<last sha7> on <git.branch>, or none
       PR: <url from the earlier verification comment>
-      tab: <tab_id> left open for inspection
+      terminal: <key>-rev left live for inspection
       ```
 
-      The `tab:` line is present only when the round was not green.
+      The `terminal:` line is present only when the round was not green.
    6. Move the ticket to `linear.states.finished`, whether or not everything
       passed. The comment says what failed; your human partner decides.
    7. Stop.
@@ -238,8 +244,8 @@ On a blocker, the agent that hit it, child or orchestrator:
 - Never design, plan, implement or fix anything in this session. Prompt the
   stage child instead.
 - Never present a menu or ask a question in the pane.
-- Never close a tab, pane or workspace, including ones you created, except
-  the `<key> rev` tab in step 7 after a round that pushed and passed. Your
+- Never end a terminal, including ones you started, except `<key>-rev` in
+  step 7 after a round that pushed and passed. Your
   human partner reviews the PR from here.
 - One retry per stage, as written in steps 5 and 6. A second failure is a
   comment and a stop, not a third attempt.
@@ -253,5 +259,5 @@ On a blocker, the agent that hit it, child or orchestrator:
 | "Nobody answered the blocker, I'll pick the option I'd have chosen" | The ticket is in Needs Info. The answer comes back as a resume; until then there is nothing to do. |
 | "Tests failed on something the ticket didn't touch, so verification passed" | Report what ran. A failing suite is a failing suite; the comment says so and your human partner decides. |
 | "The feedback is one line, I'll make the change myself" | You implement nothing. Start the rev child. |
-| "Verification is red but the change is what they asked for, close the tab anyway" | Red leaves the tab. The comment says it is open and why. |
+| "Verification is red but the change is what they asked for, end the terminal anyway" | Red leaves the terminal. The comment says it is live and why. |
 | "No live rev child and no new comments, so re-run exec" | Exec is complete. Post nothing to revise and move the ticket back. |
